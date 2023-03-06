@@ -214,13 +214,17 @@ namespace KirasFM {
 //      	);
 
 //      // Silver ball in vacuum (3D only)
-//      DDM_Grid_Generator::DDMGridGenerator<dim> ddm_gg(owned_problems[i], size, refinements);
-//      ddm_gg.hyper_ball_embedded(thm[i].return_triangulation(), owned_problems[i], 2.0, 1.0);
+      std::vector<double> layer_thickness = {2.00, 1.625, 1.25, 0.75};
+      ddm_gg.hyper_ball_embedded(
+          thm[i].return_triangulation(),
+          1.0, /*  radius of the silver ball */
+          layer_thickness
+      );
 
 //      // Test Waveguide (3D only)
-        double scale = 1.0;
-//      DDM_Grid_Generator::magic_switch( thm[i].return_triangulation() , owned_problems[i] , refinements, slizes, scale);
-        ddm_gg.make_6er_waveguide( thm[i].return_triangulation() , owned_problems[i] , refinements, slizes, scale);
+//        double scale = 1.0;
+//        DDM_Grid_Generator::magic_switch( thm[i].return_triangulation() , owned_problems[i] , refinements, slizes, scale);
+//        ddm_gg.make_6er_waveguide( thm[i].return_triangulation() , owned_problems[i] , refinements, slizes, scale);
 
 //      // Y-beamsplitter (3D only)
 //      Y_Beam_Splitter::y_beamsplitter( thm[i].return_triangulation(), owned_problems[i], refinements, slizes);
@@ -238,7 +242,7 @@ namespace KirasFM {
 
   template<int dim>
   void DDM<dim>::step(std::vector<std::vector<unsigned int>> connectivity) {
-    
+
     // update the interfaces (compute g_in)
     for( unsigned int i = 0; i < owned_problems.size(); i++ ) 
       thm[i].update_interface_rhs();
@@ -469,7 +473,7 @@ int main(int argc, char *argv[]) {
     );
 
     // create the connectivity map
-    const unsigned int size = slizes * 3;
+    const unsigned int size = slizes;
     std::vector<std::vector<unsigned int>> connectivity(size);
 
     //for(unsigned int i = 0; i < size; i++) {
@@ -532,13 +536,15 @@ int main(int argc, char *argv[]) {
 //    ddm_gg.make_simple_waveguide( tria );
 
 //    // For debugging: Silver ball in vacuum
-//    KirasFM_Grid_Generator::KirasFMGridGenerator<3> ddm_gg(1, 1, 2);
-//
-//    ddm_gg.ball_embedding (
+//    KirasFM_Grid_Generator::KirasFMGridGenerator<3> ddm_gg(3, 4, 2);
+
+//    std::vector<double> layer_thickness = {2.00, 1.625, 1.25, 0.75};
+
+//    ddm_gg.hyper_ball_embedded(
 //        tria,
-//        2.0, /* inner radius */
-//        1.0  /* outer radius */
-//      );
+//        1.0, /*  radius of the silver ball */
+//        layer_thickness
+//    );
 //
 //    std::ofstream output_file1("Grid1.vtk");
 //    GridOut().write_vtk(tria, output_file1);
@@ -565,11 +571,11 @@ int main(int argc, char *argv[]) {
 //          for( unsigned int i = 0; i < 0; i++ ) {
             pcout << "==================================================================" << std::endl;
             pcout << "STEP " << i + 1 << ":" << std::endl;
-            if( i == 8 ) {
+            if( i == 4 ) {
               problem.refine(connectivity);
             } else {
               problem.step(connectivity);
-            } 
+            }
     
           }
           pcout << "==================================================================" << std::endl;

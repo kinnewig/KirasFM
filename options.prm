@@ -6,13 +6,13 @@ subsection Mesh & geometry parameters
   set Dimension             = 3
 
   # Polynomial degree of the used Nedelec elements
-  set Polynomial degree     = 1
+  set Polynomial degree     = 0
 
   # Number of global mesh refinement steps applied to initial coarse grid
   set Number of refinements = 1
 
   # Number of global iterations of the outer jacobi fixpoint iterations
-  set Number of global iterations = 8
+  set Number of global iterations = 4
 
   # Scaling factor of the grid
   set Size of grid          = 1
@@ -24,28 +24,26 @@ subsection MPI parameters
   set CPUs per domain       = 1
 
   # Number of slizes (length) that will be created
-  set slizes                = 8
+  set slizes                = 4
 end
 
 
 # === material constants ===
 subsection Material parameters
   # A list of the different refrectiv indicies, where the first index corresponds to the material id 0, the second refrectiv index to the material id 1 an so on
-  #set List of refrective indicies = 1.0 0.0 4.0 0.0 # = (1.0+0.0i, 4.0+0.0i) <- Silverball
+  set List of refrective indicies = 1.0 0.0 4.0 0.0 # = (1.0+0.0i, 4.0+0.0i) <- Silverball
   #set List of refrective indicies = 1.4537 0.0 2.0257 0.0 2.4061 0.0 # = (1.0+0.0i, 4.0+0.0i) <- Diamond Fin (SiO2 @ 777.5nm, Diamond @ 777.5, Si3N4 @ 777.5nm)
   #set List of refrective indicies = 1.0 0.0 2.0257 0.0 2.2 0.0 2.4 0.0 # <- Gallium Laser (Air, SiO2, Thin Layer, Gallium)
-  set List of refrective indicies = 1.4906 0.0 1.48996 0.0 1.0 0.0 # <- 6er Waveguide
-  #set List of refrective indicies = 1.0 0.0 1.4537 0.0
+  #set List of refrective indicies = 1.4906 0.0 1.48996 0.0 1.0 0.0 # <- 6er Waveguide
 end
 
 # === physical constants ===
 subsection Physical constants
   # Frequency
-  #set lambda = 1.5    # <- Silverball, rescaled with 1/3, corresponds to the wavelength 600nm
-  #set lambda = 3.8875 # <- Diamond Fin, rescaled with 1/200nm, corresonds to the wavelength 777.5nm
-  #set lambda = 0.4  # <- Gallium Laser, corresonds to the wavelength 450nm
+  set lambda = 1.5     # <- Silverball, rescaled with 1/3, corresponds to the wavelength 600nm
+  #set lambda = 3.8875  # <- Diamond Fin, rescaled with 1/200nm, corresonds to the wavelength 777.5nm
+  #set lambda = 0.4     # <- Gallium Laser, corresonds to the wavelength 450nm
   #set lambda = 0.04125 # <- 6er Waveguide, rescaled with 1/16 - corresponds to the wavelength 660nm
-  set lambda = 0.165 # <- 6er Waveguide, rescaled with 1/16 - corresponds to the wavelength 660nm
 end
 
 

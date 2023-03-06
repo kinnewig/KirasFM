@@ -33,20 +33,21 @@ namespace KirasFM {
     //values(4) = 0.0;
     //values(4) = 0.0;
 
-    values(0) = ( 1.0 / std::sqrt(2) ) * std::exp( - ( std::pow(p(0) - 0.5, 2) / 0.035)  - (std::pow(p(1) - 0.5, 2) / 0.035) );
-    values(1) = 0.0;
-    values(2) = 0.0;
-    values(3) = ( 1.0 / std::sqrt(2) ) * std::exp( - ( std::pow(p(0) - 0.5, 2) / 0.035)  - (std::pow(p(1) - 0.5, 2) / 0.035) );
-    values(4) = 0.0;
-    values(5) = 0.0;
+//    // === 6er Waveguide ===
+//    values(0) = std::exp( - ( std::pow(p(0) - 0.5, 2) / 0.1)  - (std::pow(p(2) - 0.5, 2) / 0.1) );
+//    values(1) = 0.0;
+//    values(2) = 0.0;
+//    values(3) = std::exp( - ( std::pow(p(0) - 0.5, 2) / 0.1)  - (std::pow(p(2) - 0.5, 2) / 0.1) );
+//    values(4) = 0.0;
+//    values(4) = 0.0;
 
-//    // === Silverball === 
-//    values(0) = 1.0;
-//    values(1) = 1.0;
-//    values(2) = 1.0;
-//    values(3) = 1.0;
-//    values(4) = 1.0;
-//    values(5) = 1.0;
+    // === Silverball ===
+    values(0) = 1.0;
+    values(1) = 1.0;
+    values(2) = 1.0;
+    values(3) = 1.0;
+    values(4) = 1.0;
+    values(5) = 1.0;
 
 //    // === Diamond Fin ===
 //    double block_size = 1.0;
