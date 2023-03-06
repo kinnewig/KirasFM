@@ -213,12 +213,19 @@ namespace KirasFM {
 //      	  2  // z-depth
 //      	);
 
-//      // Silver ball in vacuum (3D only)
+      /*
+       *  Silver ball in vacuum (3D only)
+       */
       std::vector<double> layer_thickness = {2.00, 1.625, 1.25, 0.75};
-      ddm_gg.hyper_ball_embedded(
-          thm[i].return_triangulation(),
-          1.0, /*  radius of the silver ball */
-          layer_thickness
+      ddm_gg.create_nano_particle(
+        thm[i].return_triangulation(),
+        1.0, /*  radius of the silver ball */
+        layer_thickness
+      );
+
+      ddm_gg.refine_nano_particle(
+        thm[i].return_triangulation(),
+        1.0
       );
 
 //      // Test Waveguide (3D only)
