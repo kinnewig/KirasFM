@@ -77,6 +77,13 @@ namespace KirasFM_Grid_Generator {
       );
 
       void
+      quarter_ball_embedding_inverse (
+              Triangulation<dim> &tria,
+              double outer_radius, /* outer radius */
+              double inner_radius  /* inner radius */
+      );
+
+      void
       ball_embedding (
         Triangulation<dim> &tria,
         double outer_radius, /* outer radius */
@@ -84,20 +91,26 @@ namespace KirasFM_Grid_Generator {
       );
 
       void
-      hyper_ball_embedded (
-        Triangulation<dim> &tria,
-		unsigned int index,
-        double outer_radius, /* outer radius */
-        double inner_radius  /* inner radius */
+      shell_embedding (
+              Triangulation<dim> &tria,
+              double outer_radius, /* outer radius */
+              double inner_radius  /* inner radius */
       );
 
       void
-     make_embeddded_sphere (
-       Triangulation<dim> &tria,
-       unsigned int index,
-       double outer_radius, /* outer radius */
-       double inner_radius  /* inner radius */
-     );
+      shell_embedding_filled (
+        Triangulation<dim> &tria,
+        double outer_radius
+      );
+
+      void
+      hyper_ball_embedded (
+        Triangulation<dim> &tria,
+        double ball_radius, /* radius of the silver ball */
+        std::vector<double> /* List with the thickness of the dirrerent layers*/
+      );
+
+
 
       // === Gallium Laser ===
       void
