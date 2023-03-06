@@ -106,7 +106,7 @@ namespace KirasFM_Grid_Generator {
 
   }
 
-    // 1. Help Function: Quarter_ball_embedding_inverse
+    // 2. Help Function: Quarter_ball_embedding_inverse
     // produces the same grid as if you switch outer_radius and
     // inner_radius in the function quarter_ball_embedding
     // but creates well oriented cells.
@@ -158,7 +158,7 @@ namespace KirasFM_Grid_Generator {
 
     }
 
-  // 2. Help Function: Ball embedding
+  // 3. Help Function: Ball embedding
   // We crate from the quarter ball embedding the (qudratic embedding for a complete ball)
   template <int dim>
   void KirasFMGridGenerator<dim>::ball_embedding (
@@ -250,7 +250,7 @@ namespace KirasFM_Grid_Generator {
   }
 
 
-    // 3. Help Function: Hyper Shell
+    // 4. Help Function: Hyper Shell
     // We crate from the quarter ball embedding the (qudratic embedding for a complete ball)
     template <int dim>
     void KirasFMGridGenerator<dim>::shell_embedding (
@@ -349,7 +349,7 @@ namespace KirasFM_Grid_Generator {
       tria.refine_global(refinements);
     }
 
-    // 3. Help Function: Hyper Shell - Filled
+    // 5. Help Function: Hyper Shell - Filled
     // Create a Hyper Shell with a filled center, i.e. a ball.
     // This is needed to ensure that the cells in the grid numerated accordingly to work
     // with the domain decomposition method.
@@ -460,9 +460,12 @@ namespace KirasFM_Grid_Generator {
       tria.refine_global(refinements);
     }
 
+
+    // === Nano Particle ===
+    // Summerize the functions defined above to create the Nano Particle
     template<int dim>
     void
-    KirasFMGridGenerator<dim>::hyper_ball_embedded(
+    KirasFMGridGenerator<dim>::create_nano_particle (
             Triangulation<dim> &tria,
             double ball_radius,
             std::vector<double> layer_thickness
@@ -514,22 +517,12 @@ namespace KirasFM_Grid_Generator {
          double outer_radius = layer_thickness[domain_id];
          double inner_radius = outer_radius * 0.4;
 
-//         GridGenerator::hyper_ball_balanced(tria, Point<dim>(0,0,0), outer_radius);
-//         tria.refine_global(refinements);
-
          shell_embedding_filled (
           tria,
           outer_radius
         );
 
-        //// --- Set Boundary ID ---
-        //for (const auto &cell: tria.cell_iterators())
-        //  for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++) {
-        //    if (cell->face(face)->at_boundary() &&
-        //        cell->face(face)->center().norm() < (inner_radius + outer_radius) / 2)
-        //      cell->face(face)->set_boundary_id( 0 );
-        //  }
-
+        // --- Set Boundary ID ---
         for (const auto &cell: tria.cell_iterators())
           for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++) {
             if (cell->face(face)->at_boundary() &&
@@ -581,6 +574,24 @@ namespace KirasFM_Grid_Generator {
         mark_ball<dim>(tria, ball_radius, Point<dim>(0.0, 0.0, 0.0), 1);
       }
   }
+
+  template<int dim>
+  void KirasFMGridGenerator<dim>::refine_nano_particle (
+    Triangulation<dim> &tria,
+    double radius
+  ) {
+  for (auto &cell : tria.cell_iterators()) {
+    // if the cell is inside the radius mark it for refinement
+    if ( cell->center().norm() >= radius ) 
+      cell->set_refine_flag();
+  }
+
+  // prepare the triangulation for refinement,
+  tria.prepare_coarsening_and_refinement();
+
+  // actually execute the refinement,
+  tria.execute_coarsening_and_refinement();
+}
 
   template class KirasFMGridGenerator<3>;
 } // KirasFM_Grid_Generator

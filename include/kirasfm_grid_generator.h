@@ -33,7 +33,6 @@ namespace KirasFM_Grid_Generator {
 
       // === Simple Waveguides ===
       void make_simple_waveguide( Triangulation<dim>& in );
-      void make_embedded_ball( Triangulation<dim>& in );
 
       // === Y-beamsplitter ===
       void y_beamsplitter (
@@ -104,12 +103,17 @@ namespace KirasFM_Grid_Generator {
       );
 
       void
-      hyper_ball_embedded (
+      create_nano_particle (
         Triangulation<dim> &tria,
         double ball_radius, /* radius of the silver ball */
         std::vector<double> /* List with the thickness of the dirrerent layers*/
       );
 
+      void 
+      refine_nano_particle (
+        Triangulation<dim> &tria,
+        double radius
+      );
 
 
       // === Gallium Laser ===
@@ -161,6 +165,13 @@ namespace KirasFM_Grid_Generator {
 
       // internal functions
       void set_boundary_ids( Triangulation<dim>& in, const int axis);
+
+      void refine_circular(
+        Triangulation<dim>& in,
+        Point<dim> center,
+        unsigned int axis,    /* 0 -> x-axis, 1 -> y-axis, 2 -> z-axis */
+        double radius
+      );
 
       // Number of domains & domain_id
       const unsigned int domain_id;

@@ -214,6 +214,33 @@ namespace KirasFM_Grid_Generator {
 
   }
 
+template<int dim>
+void
+KirasFMGridGenerator<dim>::refine_circular(
+  Triangulation<dim>& in,
+  Point<dim> center,
+  unsigned int axis,    /* 0 -> x-axis, 1 -> y-axis, 2 -> z-axis */
+  double radius
+) {
+  for (auto &cell : in.cell_iterators()) {
+    double distance = 0;
+    for ( unsigned int i = 0; i < dim; i++)
+      if ( i != axis )
+        distance = std::pow(cell->center()[i] - center[i], 2);
+
+    // if the cell is inside the radius mark it for refinement
+    if ( std::sqrt(distance) < radius ) 
+      cell->set_refine_flag();
+  }
+
+  // prepare the triangulation for refinement,
+  in.prepare_coarsening_and_refinement();
+
+  // actually execute the refinement,
+  in.execute_coarsening_and_refinement();
+
+}
+
 // === Gallium Laser ===
 template<int dim>
 void
