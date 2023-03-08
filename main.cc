@@ -216,7 +216,7 @@ namespace KirasFM {
       /*
        *  Silver ball in vacuum (3D only)
        */
-      std::vector<double> layer_thickness = {2.00, 1.625, 1.25, 0.75};
+      std::vector<double> layer_thickness = {2.00, 1.9, 1.7, 1.5, 1.3, 1.1, 0.9, 0.6};
       ddm_gg.create_nano_particle(
         thm[i].return_triangulation(),
         1.0, /*  radius of the silver ball */
@@ -225,7 +225,8 @@ namespace KirasFM {
 
       ddm_gg.refine_nano_particle(
         thm[i].return_triangulation(),
-        1.0
+        0.95,
+        0.5
       );
 
 //      // Test Waveguide (3D only)
@@ -578,7 +579,7 @@ int main(int argc, char *argv[]) {
 //          for( unsigned int i = 0; i < 0; i++ ) {
             pcout << "==================================================================" << std::endl;
             pcout << "STEP " << i + 1 << ":" << std::endl;
-            if( i == 4 ) {
+            if( false ) {
               problem.refine(connectivity);
             } else {
               problem.step(connectivity);

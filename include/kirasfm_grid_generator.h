@@ -90,6 +90,12 @@ namespace KirasFM_Grid_Generator {
       );
 
       void
+      ball_embedding_inverse (
+              Triangulation<dim> &tria,
+              double outer_radius /* outer radius */
+      );
+
+      void
       shell_embedding (
               Triangulation<dim> &tria,
               double outer_radius, /* outer radius */
@@ -109,10 +115,11 @@ namespace KirasFM_Grid_Generator {
         std::vector<double> /* List with the thickness of the dirrerent layers*/
       );
 
-      void 
+      void
       refine_nano_particle (
         Triangulation<dim> &tria,
-        double radius
+        double radius_refine,
+        double radius_coarsen
       );
 
 
