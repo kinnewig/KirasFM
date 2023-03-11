@@ -83,14 +83,13 @@ MaxwellProblem<dim>::MaxwellProblem(
   prm(param),
 
   // Surface Communicator
-  SurfaceOperator(SurfaceCommunicator<dim>(N_domains)),
-  g_out(SurfaceCommunicator<dim>(N_domains)),
+  SurfaceOperator( SurfaceCommunicator<dim>(N_domains) ),
+  g_out( SurfaceCommunicator<dim>(N_domains) ),
+
+  RefinementOperator( RefinementCommunicator<dim>(N_domains) ),
 
   domain_id(domain_id),
   N_domains(N_domains),
-
-  refine_list(N_domains),
-  coarse_list(N_domains),
 
   first_rhs(true),
   solved(false)
@@ -128,11 +127,10 @@ MaxwellProblem<dim>::MaxwellProblem (
   SurfaceOperator(SurfaceCommunicator<dim>(copy.N_domains)),
   g_out(SurfaceCommunicator<dim>(copy.N_domains)),
 
+  RefinementOperator( RefinementCommunicator<dim>(copy.N_domains) ),
+
   domain_id(copy.domain_id),
   N_domains(copy.N_domains),
-
-  refine_list(copy.refine_list),
-  coarse_list(copy.coarse_list),
 
   first_rhs(copy.first_rhs),
   solved(copy.solved)
@@ -835,6 +833,7 @@ void MaxwellProblem<dim>::update_interface_rhs() {
 
   } // rof: cell
 
+  // Write the data to the SurfaceOperator
   for( unsigned int face_id = 0; face_id < N_domains; face_id++) {
     SurfaceOperator.value(s_value[face_id], domain_id, face_id);
     SurfaceOperator.curl(s_curl[face_id], domain_id, face_id);
@@ -1090,13 +1089,6 @@ void MaxwellProblem<dim>::refine() {
   rebuild   = true;
 
   pcout << "done!" << std::endl;
-}
-
-template<int dim>
-void MaxwellProblem<dim>::reset_after_refinement() {
-  first_rhs = true;
-  solved    = false;
-  rebuild   = true;
 }
 
 // === interpolate function ===
@@ -1667,11 +1659,10 @@ void MaxwellProblem<dim>::error_estimator(Vector<float> &error_indicators) const
 }
 
 template <int dim>
-void MaxwellProblem<dim>::mark_for_refinement() {
-
+void MaxwellProblem<dim>::mark_for_refinement_error_estimator() {
   // only refine when the system was solved previously
-  // so we dont refine the grid in the first call
-  if(solved) {
+  // so we don't refine the grid in the first call
+  if( solved ) {
     //LinearAlgebra::Vector<float> error_indicators;
     Vector<float> error_indicators(triangulation.n_active_cells());
 
@@ -1679,95 +1670,116 @@ void MaxwellProblem<dim>::mark_for_refinement() {
     error_estimator(error_indicators);
 
     //parallel::shared::GridRefinement::refine_and_coarsen_fixed_number(
-    GridRefinement::refine_and_coarsen_fixed_number(
-      triangulation,
-      error_indicators,
-      0.25,
-      0.00
+    GridRefinement::refine_and_coarsen_fixed_number (
+            triangulation,
+            error_indicators,
+            0.25,
+            0.00
     );
 
+    // prepare the triangulation for refinement,
+    triangulation.prepare_coarsening_and_refinement();
+
+    // Print the current error
     const double L2_error =
-    VectorTools::compute_global_error(triangulation,
-                                      error_indicators,
-                                      VectorTools::L2_norm);
-                                      //VectorTools::H1_seminorm);
-                                      //VectorTools::Linfty_norm);
-
+            VectorTools::compute_global_error (
+                    triangulation,
+                    error_indicators,
+                    VectorTools::L2_norm
+                    //VectorTools::H1_seminorm
+                    //VectorTools::Linfty_norm
+            );
     pcout << "L2 error: " << L2_error << std::endl;
+  }
+}
 
-    std::vector<bool> refinement_flags, coarsen_flags;
+template <int dim>
+void MaxwellProblem<dim>::prepare_mark_interface_for_refinement() {
+  // Refinement Operator
+  std::vector< std::vector< bool > > r_coarsen(N_domains);
+  std::vector< std::vector< bool > > r_refinement(N_domains);
 
-    for(auto &cell : dof_handler.active_cell_iterators()) {
+  // loop over all cells:
+  for ( auto &cell : dof_handler.active_cell_iterators() ) {
+    // skip all non-locally owned cells
+    if ( !cell->is_locally_owned() )
+      continue;
 
-      bool du_stinkst = false;
-      for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++) {
-        unsigned int face_id = cell->face(face)->boundary_id();
-        if (face_id == domain_id + 3 && cell->face(face)->at_boundary())
-          du_stinkst = true;
-      }
+    // loop over all faces:
+    for ( unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++ ) {
+      // get the face_id
+      unsigned int face_id = cell->face(face)->boundary_id();
 
-      if ( !du_stinkst )
+      // skip all faces, that are not located at the boundary
+      if ( !cell->face(face)->at_boundary() )
         continue;
 
-      if( cell->refine_flag_set() ) {
-        refinement_flags.push_back(true);
-      } else {
-        refinement_flags.push_back(false);
-      }
+      // skip all faces with a face_id < 2 ( as they do not belong to interfaces)
+      if ( face_id < 2 )
+        continue;
 
-      //if( cell->coarsen_flag_set() ) {
-      //  coarsen_flags.push_back(true);
-      //} else {
-      //  coarsen_flags.push_back(false);
-      //}
+      r_coarsen[face_id - 2].push_back( cell->coarsen_flag_set() );
+      r_refinement[face_id - 2].push_back( cell->refine_flag_set() );
+    }
 
+  } // rof: cell
 
-    } // rof: cell
-
-    refine_list[domain_id] = refinement_flags;
-    coarse_list[domain_id] = coarsen_flags;
-
-  } // fi: solved
+  // Write the data to the RefinementOperator
+  for( unsigned int face_id = 0; face_id < N_domains; face_id++) {
+    RefinementOperator.coarsen(r_coarsen[face_id], domain_id, face_id);
+    RefinementOperator.refinement(r_refinement[face_id], domain_id, face_id);
+  }
 
 }
 
 template <int dim>
-void MaxwellProblem<dim>::mark_interface_for_refinement() {
+void MaxwellProblem<dim>::apply_mark_interface_for_refinement() {
   pcout << "Mark the interface for refinement... ";
 
-  if(domain_id > 0) {
+  // counter
+  std::vector<unsigned int> face_n(N_domains, 0);
 
-    unsigned int counter = 0;
+  // loop over all cells
+  for ( auto &cell : dof_handler.active_cell_iterators() ) {
+    // skip all non-locally owned cells
+    if ( !cell->is_locally_owned() )
+      continue;
 
-    for(auto &cell : dof_handler.active_cell_iterators()) {
-      if ( cell->is_locally_owned() == false ) 
+    // loop over all faces:
+    for ( unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++ ) {
+      // get the face_id
+      unsigned int face_id = cell->face(face)->boundary_id();
+
+      // skip all faces, that are not located at the boundary
+      if (!cell->face(face)->at_boundary())
         continue;
 
-      bool du_stinkst = false;
-      for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++) {
-        unsigned int face_id = cell->face(face)->boundary_id();
-        if (face_id == domain_id + 1 && cell->face(face)->at_boundary())
-          du_stinkst = true;
+      // skip all faces with a face_id < 2 ( as they do not belong to interfaces)
+      if (face_id < 2)
+        continue;
+
+      // we need to priorize one domain, here we choose the domain with the higher
+      // domain_id to define the refinement level, therefore we skip this face
+      // if the domain_id is higher than the domain_id of its neighbor
+      //if (domain_id > face_id - 2)
+      //  continue;
+
+      // first remove any existing refine or coarsen flags
+      //cell->clear_refine_flag();
+      //cell->clear_coarsen_flag();
+
+      if ( RefinementOperator.refinement(face_id - 2, domain_id)[face_n[face_id - 2]] ) {
+        cell->set_refine_flag();
+      }
+      else if ( RefinementOperator.coarsen(face_id - 2, domain_id)[face_n[face_id - 2]] ) {
+        //cell->set_coarsen_flag();
       }
 
-      if ( !du_stinkst )
-        continue;
+      face_n[face_id - 2]++;
+    } // rof: face
 
-      // remove any existing refine or coarsen flags
-      cell->clear_refine_flag();
-      cell->clear_coarsen_flag();
+  } // rof: cell
 
-      if( refine_list[domain_id - 1][counter] ) {
-        cell->set_refine_flag();
-      } else if( coarse_list[domain_id - 1][counter] ){
-      //  cell->set_coarsen_flag();
-      } 
-      
-      counter++;
-
-    }// rof: cell
-
-  } // fi: solved
   pcout << " done!" << std::endl;
 }
 
@@ -1803,35 +1815,25 @@ SurfaceCommunicator<dim> MaxwellProblem<dim>::return_g_out() {
 }
 
 template<int dim>
-std::vector<bool> MaxwellProblem<dim>::return_refine() {
-  return refine_list[domain_id];
-}
-
-template<int dim>
-std::vector<bool> MaxwellProblem<dim>::return_coarse() {
-  return coarse_list[domain_id];
+RefinementCommunicator<dim> MaxwellProblem<dim>::return_refine() {
+  return RefinementOperator;
 }
 
 
 // update
 template<int dim>
-void MaxwellProblem<dim>::update_g_out( SurfaceCommunicator<dim> g) {
+void MaxwellProblem<dim>::update_g_out( SurfaceCommunicator<dim> g ) {
   g_out = g;
 }
 
 template<int dim>
-void MaxwellProblem<dim>::update_g_in( SurfaceCommunicator<dim> g) {
+void MaxwellProblem<dim>::update_g_in( SurfaceCommunicator<dim> g ) {
   SurfaceOperator = g;
 }
 
 template<int dim>
-void MaxwellProblem<dim>::update_refine(std::vector<std::vector<bool>> refine_in) {
-  refine_list = refine_in;
-}
-
-template<int dim>
-void MaxwellProblem<dim>::update_coarse(std::vector<std::vector<bool>> coarse_in) {
-  coarse_list = coarse_in;
+void MaxwellProblem<dim>::update_refine( RefinementCommunicator<dim> r ) {
+  RefinementOperator = r;
 }
 
 

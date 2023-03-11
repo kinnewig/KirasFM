@@ -19,18 +19,34 @@ template <int dim>
 class RefinementCommunicator {
   public:
     // Constructor
-    RefinementCommunicator();
-    RefinementCommunicator(unsigned int n_domains_);
-    RefinementCommunicator(const RefinementCommunicator<dim>& copy);
+    RefinementCommunicator ();
+    RefinementCommunicator ( unsigned int n_domains_ );
+    RefinementCommunicator ( const RefinementCommunicator<dim>& copy );
 
-    // functions
-    std::vector<std::vector<bool>> refinement();
-    std::vector<bool> refinement(unsigned int i);
-    void update(std::vector<bool> data, unsigned int i);
-    void update(RefinementCommunicator<dim> rc, unsigned int i);
+    // return functions
+    std::vector<bool>
+    coarsen ( unsigned int i, unsigned int j);
 
-    // Operator
-    RefinementCommunicator<dim>& operator=(const RefinementCommunicator<dim>& copy);
+    std::vector<bool>
+    refinement ( unsigned int i, unsigned int j);
+
+    // update functions
+    void coarsen (
+      std::vector<bool> in,
+      unsigned int i,
+      unsigned int j
+    );
+
+    void refinement (
+      std::vector<bool> in,
+      unsigned int i,
+      unsigned int j
+    );
+
+    void update ( RefinementCommunicator<dim> rc, unsigned int i );
+
+    // copy assignment operator
+    RefinementCommunicator<dim>& operator= ( const RefinementCommunicator<dim>& copy );
 
   private:
     // Befriend the class with boost::serialization for the use with MPI
@@ -40,13 +56,21 @@ class RefinementCommunicator {
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version) {
       ar& n_domains;
+      ar& coarsen_data;
       ar& refinement_data;
+
       v = version;
     }
     unsigned int n_domains;
     unsigned int v;
 
-    std::vector<std::vector<bool>> refinement_data;
+    std::vector<
+      std::vector<bool>
+    > coarsen_data;
+
+    std::vector<
+      std::vector<bool>
+    > refinement_data;
 };
 
 } //namespace KirasFM

@@ -61,6 +61,7 @@
 #include <parameter_reader.h>
 #include <post_processing.h>
 #include <surface_communicator.h>
+#include <refinement_communicator.h>
 #include <write_data_table.h>
 #include <hanging_nodes.h>
 
@@ -119,8 +120,7 @@ class MaxwellProblem {
     SurfaceCommunicator<dim> return_g_out();
     SurfaceCommunicator<dim> return_g_in();
 
-    std::vector<bool> return_refine();
-    std::vector<bool> return_coarse();
+    RefinementCommunicator<dim> return_refine();
 
     void setup_system();
 
@@ -134,26 +134,26 @@ class MaxwellProblem {
     void recall_solution();
 
     // refinement functions:
-    void mark_for_refinement();
-    void mark_interface_for_refinement();
+    void mark_for_refinement_error_estimator();
+
+    void prepare_mark_interface_for_refinement();
+    void apply_mark_interface_for_refinement();
 
     void refine();
-    void reset_after_refinement();
 
     // update:
-    void update_g_out(SurfaceCommunicator<dim> g);
-    void update_g_in(SurfaceCommunicator<dim> g);
+    void update_g_out( SurfaceCommunicator<dim> g );
+    void update_g_in( SurfaceCommunicator<dim> g );
 
-    void update_refine(std::vector<std::vector<bool>> refine_in);
-    void update_coarse(std::vector<std::vector<bool>> coarse_in);
+    void update_refine( RefinementCommunicator<dim> r );
 
   private:
     // === internal functions ===
-    void setup_system(DoFHandler<dim>& dof_handler_local);
+    void setup_system( DoFHandler<dim>& dof_handler_local );
 
 
     // error estimator
-    void error_estimator(Vector<float> &error_indicators) const;
+    void error_estimator( Vector<float> &error_indicators ) const;
 
     // output
     void output_results() const;
@@ -190,11 +190,10 @@ class MaxwellProblem {
 
     // Interface
     SurfaceCommunicator<dim>       SurfaceOperator, g_out;
+    RefinementCommunicator<dim>    RefinementOperator; /* Refinement over intefaces */
 
     const unsigned int             domain_id;
     const unsigned int             N_domains;
-
-   std::vector<std::vector<bool>>  refine_list, coarse_list;
 
     bool                           first_rhs = true;
     bool                           solved    = false;

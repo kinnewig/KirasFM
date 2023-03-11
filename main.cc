@@ -17,52 +17,6 @@
 namespace KirasFM {
   using namespace dealii;
 
-  //basically this is just a std::vector<bool>, that allows for boos::mpi parallelisation
-  class refine_coarse_list {
-    public:
-      //constructor
-      refine_coarse_list();
-      refine_coarse_list(unsigned int length);
-      refine_coarse_list(std::vector<bool> in);
-      refine_coarse_list(const refine_coarse_list& copy);
-
-      std::vector<bool> return_content();
-
-    private:
-      friend class boost::serialization::access;
-
-      template<class Archive>
-      void serialize(Archive &ar, const unsigned int version) {
-        ar& content;
-        v = version;
-      }
-
-      std::vector<bool> content;
-      unsigned int v;
-  };
-
-  refine_coarse_list::refine_coarse_list():
-    content()
-  {}
-
-  refine_coarse_list::refine_coarse_list(const unsigned int length):
-    content(length)
-  {}
-
-  refine_coarse_list::refine_coarse_list(std::vector<bool> in):
-    content(in)
-  {}
-
-  refine_coarse_list::refine_coarse_list(const refine_coarse_list& copy):
-    content(copy.content)
-  {}
-
-  std::vector<bool> refine_coarse_list::return_content() {
-    return content;
-  }
-
-
-  
   template<int dim>
   class DDM {
     public:
@@ -78,7 +32,10 @@ namespace KirasFM {
 
       void initialize();
       void step(std::vector<std::vector<unsigned int>> connectivity);
-      void refine(std::vector<std::vector<unsigned int>> connectivity);
+      void prepare_refine(std::vector<std::vector<unsigned int>> connectivity);
+      void refine();
+
+      void mark_circular(double radius);
 
       void print_result() const;
 
@@ -107,6 +64,8 @@ namespace KirasFM {
       // the system:
       std::vector<MaxwellProblem<dim>> thm;
       SurfaceCommunicator<dim> g_out, g_in;
+
+      RefinementCommunicator<dim> r_in;
 
       // help functions
       bool proc_first() const;
@@ -137,8 +96,12 @@ namespace KirasFM {
 
     domain_map(std::vector<std::vector<unsigned int>>(size)),
 
-    g_out(SurfaceCommunicator<dim>(size)),
-    g_in(SurfaceCommunicator<dim>(size))
+    // Initialize the SurfaceCommunicator
+    g_out( SurfaceCommunicator<dim>(size) ),
+    g_in( SurfaceCommunicator<dim>(size) ),
+
+    // Initialize the RefinementCommunicator, with size domains
+    r_in( RefinementCommunicator<dim>(size) )
 
   {
     if(world_size < cpus_per_domain) {
@@ -331,56 +294,70 @@ namespace KirasFM {
   }
 
   template<int dim>
-  void DDM<dim>::refine(std::vector<std::vector<unsigned int>> connectivity) {
+  void DDM<dim>::prepare_refine(std::vector<std::vector<unsigned int>> connectivity) {
 
-    // evaluate the error estimator and mark the corresponding cells for refinement:
-    for(unsigned int i = 0; i < owned_problems.size(); i++)
-      thm[i].mark_for_refinement();
+    for (unsigned int i = 0; i < owned_problems.size(); i++)
+      thm[i].prepare_mark_interface_for_refinement();
 
-    //TODO: Add support for mulitple Domains per CPU
-    //std::vector<std::vector<bool>>  refine_list = Utilities::MPI::all_gather(MPI_COMM_WORLD, thm[0].return_refine());
-    //std::vector<std::vector<bool>>  coarse_list = Utilities::MPI::all_gather(MPI_COMM_WORLD, thm[0].return_coarse());
-
-    //thm[0].update_refine(refine_list);
-
-    // Alternative
     // Gather refinement:
-    RefinementCommunicator<dim> rc_in(size);
-    for( unsigned int i = 0; i < owned_problems.size(); i++ )
-      rc_in.update(thm[i].return_refine(), owned_problems[i]);
+    for (unsigned int i = 0; i < owned_problems.size(); i++)
+      r_in.update(thm[i].return_refine(), owned_problems[i]);
 
-    // distribute g_in to all neighbours:
-    if( proc_first() ) {
-      for(unsigned int problem : owned_problems) {
-        for(unsigned int dest : connectivity[problem]) {
+    // distribute r_in to all neighbours:
+    if (proc_first()) {
+      for (unsigned int problem: owned_problems) {
+        for (unsigned int dest: connectivity[problem]) {
           const unsigned int i = domain_map[dest][0];
-          RefinementCommunicator<dim> rc_tmp(size);
+          RefinementCommunicator<dim> r_tmp(size);
 
           // send & recieve
           boost::mpi::request reqs[2];
-          reqs[0] = world.isend(i, dest, rc_in);
-          reqs[1] = world.irecv(i, problem, rc_tmp);
-          boost::mpi::wait_all(reqs, reqs + 2 );
-          rc_in.update(rc_tmp, dest);
+          reqs[0] = world.isend(i, dest, r_in);
+          reqs[1] = world.irecv(i, problem, r_tmp);
+          boost::mpi::wait_all(reqs, reqs + 2);
+          r_in.update(r_tmp, dest);
         }
       }
 
-      for(unsigned int i = 1; i < proc_size(); i++)
-        world.send(world_rank + i, world_rank + i, rc_in);
+      for (unsigned int i = 1; i < proc_size(); i++)
+        world.send(world_rank + i, world_rank + i, r_in);
 
     } else {
-      RefinementCommunicator<dim> rc_tmp(size);
-      world.recv(proc_previous(), world_rank, rc_tmp);
-      rc_in = rc_tmp;
+      RefinementCommunicator<dim> r_tmp(size);
+      world.recv(proc_previous(), world_rank, r_tmp);
+      r_in = r_tmp;
     }
 
-    for(unsigned int i = 0; i < owned_problems.size(); i++)
-      thm[i].update_refine(rc_in.refinement());
+    for (unsigned int i = 0; i < owned_problems.size(); i++)
+      thm[i].update_refine(r_in);
 
     // mark the cells at the interface for refinment:
-    for(unsigned int i = 0; i < owned_problems.size(); i++)
-      thm[i].mark_interface_for_refinement();
+    for (unsigned int i = 0; i < owned_problems.size(); i++)
+      thm[i].apply_mark_interface_for_refinement();
+  }
 
+  template<int dim>
+  void DDM<dim>::mark_circular(double radius) {
+
+    unsigned int axis = 2;
+    Point<dim> center(0.5, 0.5, 0);
+
+    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
+
+      for (auto &cell : thm[i].return_triangulation().cell_iterators()) {
+        double distance = 0;
+        for (unsigned int j = 0; j < dim; j++)
+          if (j != axis)
+            distance += std::pow(cell->center()[j] - center[j], 2);
+
+        // if the cell is inside the radius mark it for refinement
+        if (std::sqrt(distance) < radius)
+          cell->set_refine_flag();
+      }
+  }
+
+  template<int dim>
+  void DDM<dim>::refine() {
     for ( unsigned int i = 0; i < owned_problems.size(); i++ )
       thm[i].refine();
 
@@ -575,12 +552,16 @@ int main(int argc, char *argv[]) {
           pcout << "==================================================================" << std::endl;
           pcout << "INITIALIZE:" << std::endl;
           problem.initialize();
+          problem.mark_circular(0.3);
+          problem.prepare_refine(connectivity);
+          problem.refine();
           for( unsigned int i = 0; i < prm.get_integer("Mesh & geometry parameters", "Number of global iterations"); i++ ) {
 //          for( unsigned int i = 0; i < 0; i++ ) {
             pcout << "==================================================================" << std::endl;
             pcout << "STEP " << i + 1 << ":" << std::endl;
             if( false ) {
-              problem.refine(connectivity);
+              problem.prepare_refine(connectivity);
+              problem.refine();
             } else {
               problem.step(connectivity);
             }

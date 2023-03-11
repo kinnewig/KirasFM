@@ -14,13 +14,13 @@ namespace KirasFM{
 template <int dim>
 class SurfaceCommunicator {
   public:
-  
+
+    // Constructor
     SurfaceCommunicator();
-
     SurfaceCommunicator(unsigned int n_domains_);
-
     SurfaceCommunicator(const SurfaceCommunicator<dim>& copy);
 
+    // return functions
     std::vector<
       std::vector<Tensor<1, dim, std::complex<double>>>
     > value(unsigned int i, unsigned int j);
@@ -28,19 +28,23 @@ class SurfaceCommunicator {
     std::vector<
       std::vector<std::complex<double>>
     > curl (unsigned int i, unsigned int j);
- 
+
+    // update functions
     void value (
       std::vector<std::vector<Tensor<1, dim, std::complex<double>>>> in,
-      unsigned int i, unsigned int j
+      unsigned int i,
+      unsigned int j
     );
 
     void curl (
       std::vector<std::vector<std::complex<double>>> in,
-      unsigned int i, unsigned int j
+      unsigned int i,
+      unsigned int j
     );
 
     void update(SurfaceCommunicator<dim> sc, unsigned int i);
 
+    // copy assignment operator
     SurfaceCommunicator<dim>& operator=(const SurfaceCommunicator<dim>& copy);
 
 
@@ -50,15 +54,12 @@ class SurfaceCommunicator {
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version) {
         ar& n_domains;
-        ar& n_faces;
         ar& value_data;
         ar& curl_data;
         v = version;
     }
 
-
     unsigned int n_domains;
-    unsigned int n_faces;
     unsigned int v;
 
     std::vector<std::vector<

@@ -233,11 +233,11 @@ KirasFMGridGenerator<dim>::refine_circular(
       cell->set_refine_flag();
   }
 
-  // prepare the triangulation for refinement,
-  in.prepare_coarsening_and_refinement();
-
-  // actually execute the refinement,
-  in.execute_coarsening_and_refinement();
+//  // prepare the triangulation for refinement,
+//  in.prepare_coarsening_and_refinement();
+//
+//  // actually execute the refinement,
+//  in.execute_coarsening_and_refinement();
 
 }
 
