@@ -63,7 +63,7 @@ namespace KirasFM_Grid_Generator {
         const unsigned int base_width_half,
         const unsigned int base_hight,
         const unsigned int fin_hight,
-		double radius,
+        double radius,
         double block_size
       );
 
@@ -77,39 +77,31 @@ namespace KirasFM_Grid_Generator {
 
       void
       quarter_ball_embedding_inverse (
-              Triangulation<dim> &tria,
-              double outer_radius, /* outer radius */
-              double inner_radius  /* inner radius */
-      );
-
-      void
-      ball_embedding (
         Triangulation<dim> &tria,
         double outer_radius, /* outer radius */
         double inner_radius  /* inner radius */
       );
 
-      void
-      ball_embedding_inverse (
-              Triangulation<dim> &tria,
-              double outer_radius /* outer radius */
-      );
+      void quarter_shell_embedding ( Triangulation<dim> & tria, double outer_radius, double inner_radius );
 
-      void
-      shell_embedding (
-              Triangulation<dim> &tria,
-              double outer_radius, /* outer radius */
-              double inner_radius  /* inner radius */
-      );
+      void ball_embedding( Triangulation<dim> &tria, double outer_radius, double inner_radius );
+      void ball_embedding( Triangulation<dim> &tria, double outer_radius, double inner_radius, const unsigned int part );
 
-      void
-      shell_embedding_filled (
+      void ball_embedding_inverse( Triangulation<dim> &tria, double outer_radius );
+      void ball_embedding_inverse( Triangulation<dim> &tria, double outer_radius, const unsigned int part );
+
+      void shell_embedding( Triangulation<dim> &tria, double outer_radius, double inner_radius );
+      void shell_embedding( Triangulation<dim> &tria, double outer_radius, double inner_radius, const unsigned int part );
+
+      void shell_embedding_filled ( Triangulation<dim> &tria, double outer_radius );
+
+      void create_nano_particle (
         Triangulation<dim> &tria,
-        double outer_radius
+        double ball_radius, /* radius of the silver ball */
+        std::vector<double> /* List with the thickness of the dirrerent layers*/
       );
 
-      void
-      create_nano_particle (
+      void create_parted_nano_particle (
         Triangulation<dim> &tria,
         double ball_radius, /* radius of the silver ball */
         std::vector<double> /* List with the thickness of the dirrerent layers*/
@@ -184,7 +176,6 @@ namespace KirasFM_Grid_Generator {
       const unsigned int domain_id;
       const unsigned int N_domains;
       const unsigned int refinements;
-
   };
 
 

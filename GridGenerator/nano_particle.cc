@@ -161,7 +161,7 @@ namespace KirasFM_Grid_Generator {
     // 3. Help Function: Quarter_shell_embedding
     template <int dim>
     void
-    quarter_shell_embedding(
+    KirasFMGridGenerator<dim>::quarter_shell_embedding(
             Triangulation<dim>& tria,
             double outer_radius, /* outer radius */
             double inner_radius  /* inner radius */
@@ -534,9 +534,9 @@ namespace KirasFM_Grid_Generator {
 
       Triangulation<dim> tria_piece;
       quarter_ball_embedding_inverse (
-              tria_piece,
-              outer_radius,
-              inner_radius
+        tria_piece,
+        outer_radius,
+        inner_radius
       );
       const double radius = inner_radius;
 

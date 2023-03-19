@@ -92,7 +92,7 @@ namespace KirasFM {
     cpus_per_domain(cpus_per_domain),
 
     slizes(slizes),
-    size(slizes * 1),
+    size(slizes * 8),
 
     domain_map(std::vector<std::vector<unsigned int>>(size)),
 
@@ -179,18 +179,22 @@ namespace KirasFM {
       /*
        *  Silver ball in vacuum (3D only)
        */
-      std::vector<double> layer_thickness = {2.00, 1.9, 1.7, 1.5, 1.3, 1.1, 0.9, 0.6};
-      ddm_gg.create_nano_particle(
+      std::vector<double> layer_thickness = {2.00, 1.4, 0.6};
+      ddm_gg.create_parted_nano_particle(
         thm[i].return_triangulation(),
         1.0, /*  radius of the silver ball */
         layer_thickness
       );
 
-      ddm_gg.refine_nano_particle(
-        thm[i].return_triangulation(),
-        0.95,
-        0.5
-      );
+      std::string name = "Grid-" + std::to_string(owned_problems[i]) + ".vtk";
+      std::ofstream output_file1(name.c_str());
+      GridOut().write_vtk(thm[i].return_triangulation(), output_file1);
+
+//      ddm_gg.refine_nano_particle(
+//        thm[i].return_triangulation(),
+//        0.95,
+//        0.5
+//      );
 
 //      // Test Waveguide (3D only)
 //        double scale = 1.0;
@@ -458,40 +462,26 @@ int main(int argc, char *argv[]) {
     );
 
     // create the connectivity map
-    const unsigned int size = slizes;
+    const unsigned int size = slizes * 8;
     std::vector<std::vector<unsigned int>> connectivity(size);
 
-    //for(unsigned int i = 0; i < size; i++) {
-    //  if( i / 3 != 0 )
-    //    connectivity[i].push_back(i - 3);
-
-    //  switch( i % 3 ) {
-    //    case 0:
-    //      connectivity[i].push_back(i + 1);
-    //      break;
-
-    //    case 1:
-    //      connectivity[i].push_back(i - 1);
-    //      connectivity[i].push_back(i + 1);
-    //      break;
-
-    //    case 2:
-    //      connectivity[i].push_back(i - 1);
-    //      break;
-    //  }
-
-    //  if( i / 3 != slizes - 1 )
-    //    connectivity[i].push_back(i + 3);
-    //}
-
+    int neighbor_id[4][2] = {{1,3}, {-1,1}, {-1,1}, {-3,-1}};
     for(unsigned int i = 0; i < size; i++) {
-      if( i  != 0 ) 
-        connectivity[i].push_back(i - 1);
 
-      if( i != slizes - 1 ) 
-        connectivity[i].push_back(i + 1);
+      if( i / 8 != 0 )
+        connectivity[i].push_back(i - 8);
+
+      // inter-layer neighbors
+      if ( i < 4 )
+        connectivity[i].push_back(i + 4);
+      if ( i >= 4 )
+        connectivity[i].push_back(i - 4);
+      connectivity[i].push_back( neighbor_id[i % 4][0] );
+      connectivity[i].push_back( neighbor_id[i % 4][1] );
+
+      if( i / 8 != slizes - 1 )
+        connectivity[i].push_back(i + 8);
     }
-
 
 //    // --- For debugging ---
 //    pcout << "Connectivity map:" << std::endl;
@@ -521,16 +511,14 @@ int main(int argc, char *argv[]) {
 //    ddm_gg.make_simple_waveguide( tria );
 
 //    // For debugging: Silver ball in vacuum
-//    KirasFM_Grid_Generator::KirasFMGridGenerator<3> ddm_gg(3, 4, 2);
-
-//    std::vector<double> layer_thickness = {2.00, 1.625, 1.25, 0.75};
-
-//    ddm_gg.hyper_ball_embedded(
-//        tria,
-//        1.0, /*  radius of the silver ball */
-//        layer_thickness
+//    KirasFM_Grid_Generator::KirasFMGridGenerator<3> ddm_gg(0, 3 * 8, 2);
+//    std::vector<double> layer_thickness = {2.00, 1.4, 0.6};
+//    ddm_gg.create_parted_nano_particle(
+//      tria,
+//      1.0, /*  radius of the silver ball */
+//      layer_thickness
 //    );
-//
+
 //    std::ofstream output_file1("Grid1.vtk");
 //    GridOut().write_vtk(tria, output_file1);
 
@@ -552,9 +540,9 @@ int main(int argc, char *argv[]) {
           pcout << "==================================================================" << std::endl;
           pcout << "INITIALIZE:" << std::endl;
           problem.initialize();
-          problem.mark_circular(0.3);
-          problem.prepare_refine(connectivity);
-          problem.refine();
+//          problem.mark_circular(0.3);
+//          problem.prepare_refine(connectivity);
+//          problem.refine();
           for( unsigned int i = 0; i < prm.get_integer("Mesh & geometry parameters", "Number of global iterations"); i++ ) {
 //          for( unsigned int i = 0; i < 0; i++ ) {
             pcout << "==================================================================" << std::endl;
