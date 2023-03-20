@@ -63,6 +63,13 @@ namespace KirasFM_Grid_Generator {
 
     double TOL = 0.001;
 
+    int x_front = ( part < 4 ) ? 0 : 1;
+    int x_back  = ( part < 4 ) ? 1 : 0;
+    int y_front = ( part % 4 == 0 || part % 4 == 3 ) ? 2 : 3;
+    int y_back  = ( part % 4 == 0 || part % 4 == 3 ) ? 3 : 2;
+    int z_front = ( part % 4 == 0 || part % 4 == 1 ) ? 4 : 5;
+    int z_back  = ( part % 4 == 0 || part % 4 == 1 ) ? 5 : 4;
+
     // colorize
     for ( const auto &cell : tria.cell_iterators() )
       for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++) {
@@ -70,23 +77,24 @@ namespace KirasFM_Grid_Generator {
         if ( !cell->face(face)->at_boundary() )
           continue;
 
+        // x direction
         if ( std::abs(cell->face(face)->center()[0]) < TOL )
-          cell->face(face)->set_boundary_id(0);
+          cell->face(face)->set_boundary_id(x_front);
 
         else if ( std::abs(cell->face(face)->center()[1]) < TOL )
-          cell->face(face)->set_boundary_id(2);
+          cell->face(face)->set_boundary_id(y_front);
 
         else if ( std::abs(cell->face(face)->center()[2]) < TOL )
-          cell->face(face)->set_boundary_id(4);
+          cell->face(face)->set_boundary_id(z_front);
 
         else if ( std::abs(std::abs(cell->face(face)->center()[0]) - outer_radius) < TOL )
-          cell->face(face)->set_boundary_id(1);
+          cell->face(face)->set_boundary_id(x_back);
 
         else if ( std::abs(std::abs(cell->face(face)->center()[1]) - outer_radius) < TOL )
-          cell->face(face)->set_boundary_id(3);
+          cell->face(face)->set_boundary_id(y_back);
 
         else if ( std::abs(std::abs(cell->face(face)->center()[2]) - outer_radius) < TOL )
-          cell->face(face)->set_boundary_id(5);
+          cell->face(face)->set_boundary_id(z_back);
 
         else if( cell->face(face)->center().norm() < (inner_radius + outer_radius) / 2) {
           cell->face(face)->set_all_manifold_ids(0);
@@ -103,10 +111,47 @@ namespace KirasFM_Grid_Generator {
     tria.set_manifold(0, SphericalManifold<dim>(Point<dim>(0,0,0)));
   }
 
+    template<int dim>
+    void mark_layer_intern_interface (
+            Triangulation<dim> &tria,
+            const unsigned int  domain_id
+    ) {
+      const unsigned int layer_id      = domain_id / 8;
+      const unsigned int subdomain_id  = domain_id % 8;
+
+      const unsigned int neighbor_case = (subdomain_id < 4) ? subdomain_id : subdomain_id - 4;
+      double neighbor[4][2]            = {{2, 4}, {3, 4}, {5, 3}, {5, 2}};
+      double neighbor_shift[4][2]      = {{1,3}, {-1,1}, {-1,1}, {-3,-1}};
+
+      const unsigned int side       = (subdomain_id < 4) ? 0 :  1;
+      const int          side_shift = (subdomain_id < 4) ? 4 : -4;
+
+      for ( const auto &cell : tria.cell_iterators() )
+        for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++) {
+          // skip all faces that are not located at the boundary
+
+          if ( cell->face(face)->boundary_id() == neighbor[neighbor_case][0] )
+            cell->face(face)->set_boundary_id(domain_id + neighbor_shift[neighbor_case][0] + 2);
+
+          else if ( cell->face(face)->boundary_id() == neighbor[neighbor_case][1] )
+            cell->face(face)->set_boundary_id(domain_id + neighbor_shift[neighbor_case][1] + 2);
+
+          else if ( cell->face(face)->boundary_id() == side )
+            cell->face(face)->set_boundary_id(domain_id + side_shift + 2);
+
+          else if ( cell->face(face)->boundary_id() == 6 )
+            cell->face(face)->set_boundary_id(domain_id + 8 + 2);
+
+          else if ( cell->face(face)->boundary_id() == 7 )
+            cell->face(face)->set_boundary_id(domain_id - 8 + 2);
+
+        }
+    }
+
   template<int dim>
-  void mark_layer_intern_interface (
-    Triangulation<dim> &tria,
-    const unsigned int  domain_id
+  void mark_layer_intern_interface_special (
+          Triangulation<dim> &tria,
+          const unsigned int  domain_id
   ) {
     const unsigned int layer_id      = domain_id / 8;
     const unsigned int subdomain_id  = domain_id % 8;
@@ -115,29 +160,60 @@ namespace KirasFM_Grid_Generator {
     double neighbor[4][2]            = {{2, 4}, {3, 4}, {5, 3}, {5, 2}};
     double neighbor_shift[4][2]      = {{1,3}, {-1,1}, {-1,1}, {-3,-1}};
 
-    const unsigned int side       = (domain_id < 4) ? 0 :  1;
-    const int          side_shift = (domain_id < 4) ? 4 : -4;
+    const unsigned int side       = (subdomain_id < 4) ? 0 :  1;
+    const int          side_shift = (subdomain_id < 4) ? 4 : -4;
+    double outsides[8][3] = {
+            {1, 3, 5},
+            {1, 2, 5},
+            {1,2,4},
+            {1,3,4},
+            {0, 3, 5},
+            {0, 2, 5},
+            {0, 2, 4},
+            {0,3,4}
+    };
+
+    const unsigned int bc_dirichlet = 0;
+    const unsigned int bc_robin     = 0;
+
+    double outsides_associated_ids[8][3] = {
+            {bc_robin, bc_robin, bc_robin},
+            {bc_robin, bc_robin, bc_robin},
+            {bc_robin, bc_robin, bc_dirichlet},
+            {bc_robin, bc_robin, bc_dirichlet},
+            {bc_robin, bc_robin, bc_robin},
+            {bc_robin, bc_robin, bc_robin},
+            {bc_robin, bc_robin, bc_dirichlet},
+            {bc_robin, bc_robin, bc_dirichlet},
+    };
 
     for ( const auto &cell : tria.cell_iterators() )
       for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++) {
         // skip all faces that are not located at the boundary
-        if ( cell->face(face)->at_boundary() )
-          continue;
 
         if ( cell->face(face)->boundary_id() == neighbor[neighbor_case][0] )
-          cell->face(face)->set_boundary_id(domain_id +  neighbor_shift[neighbor_case][0] + 2 );
+          cell->face(face)->set_boundary_id(domain_id + neighbor_shift[neighbor_case][0] + 2);
 
-        if ( cell->face(face)->boundary_id() == neighbor[neighbor_case][1] + 2)
+        else if ( cell->face(face)->boundary_id() == neighbor[neighbor_case][1] )
           cell->face(face)->set_boundary_id(domain_id + neighbor_shift[neighbor_case][1] + 2);
 
-        if ( cell->face(face)->boundary_id() == side )
+        else if ( cell->face(face)->boundary_id() == side )
           cell->face(face)->set_boundary_id(domain_id + side_shift + 2);
 
-        if ( cell->face(face)->boundary_id() == 6 )
+        else if ( cell->face(face)->boundary_id() == 6 )
           cell->face(face)->set_boundary_id(domain_id + 8 + 2);
 
-        if ( cell->face(face)->boundary_id() == 7 )
+        else if ( cell->face(face)->boundary_id() == 7 )
           cell->face(face)->set_boundary_id(domain_id - 8 + 2);
+
+        else if ( cell->face(face)->boundary_id() == outsides[subdomain_id][0] )
+          cell->face(face)->set_boundary_id(outsides_associated_ids[subdomain_id][0]);
+
+        else if ( cell->face(face)->boundary_id() == outsides[subdomain_id][1] )
+          cell->face(face)->set_boundary_id(outsides_associated_ids[subdomain_id][1]);
+
+        else if ( cell->face(face)->boundary_id() == outsides[subdomain_id][2] )
+          cell->face(face)->set_boundary_id(outsides_associated_ids[subdomain_id][2]);
       }
   }
 
@@ -218,7 +294,7 @@ namespace KirasFM_Grid_Generator {
     const unsigned int subdomain_id = domain_id % 8;
 
     // check that we stay in range
-    AssertIndexRange(layer_id, layer_thickness.size() + 1);
+    AssertIndexRange(layer_id, layer_thickness.size());
 
     // Create the most outer shell
     if ( layer_id == 0 ) {
@@ -228,43 +304,7 @@ namespace KirasFM_Grid_Generator {
       ball_embedding(tria, outer_radius, inner_radius, subdomain_id);
 
       // mark interfaces
-      mark_layer_intern_interface(tria, domain_id);
-
-      double outsides[8][3] = {
-        {1, 3, 5},
-        {1, 2, 5},
-        {1,2,4},
-        {1,3,4},
-        {0, 3, 5},
-        {0, 2, 5},
-        {0, 2, 4},
-        {0,3,4}
-      };
-
-      const unsigned int bc_dirichlet = 0;
-      const unsigned int bc_robin     = 1;
-      double outsides_associated_ids[8][3] = {
-        {bc_robin, bc_robin, bc_robin},
-        {bc_robin, bc_robin, bc_robin},
-        {bc_robin, bc_robin, bc_dirichlet},
-        {bc_robin, bc_robin, bc_dirichlet},
-        {bc_robin, bc_robin, bc_robin},
-        {bc_robin, bc_robin, bc_robin},
-        {bc_robin, bc_robin, bc_dirichlet},
-        {bc_robin, bc_robin, bc_dirichlet},
-      };
-
-      // mark dirichlet and robin boundaries
-      for ( const auto &cell: tria.cell_iterators() )
-        for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++) {
-          // skipp all faces that are not located at the boundary
-          if ( !cell->face(face)->at_boundary() )
-            continue;
-
-          for (unsigned int i = 0; i < 3; i++)
-            if ( cell->face(face)->boundary_id() == outsides[subdomain_id][i] )
-              cell->face(face)->set_boundary_id(outsides_associated_ids[subdomain_id][i]);
-        }
+      mark_layer_intern_interface_special(tria, domain_id);
     }
 
     // create the center
@@ -293,6 +333,22 @@ namespace KirasFM_Grid_Generator {
       mark_ball<dim>(tria, ball_radius, Point<dim>(0.0, 0.0, 0.0), 1);
     }
 
+    //const unsigned int bc_dirichlet = 1;
+    //const unsigned int bc_robin     = 0;
+    //double TOL_1 = 0.001;
+    //double TOL_2 = 0.5;
+    //for ( const auto &cell : tria.cell_iterators() )
+    //  for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++) {
+    //    if(!cell->face(face)->at_boundary())
+    //      continue;
+
+    //    if ( std::abs(std::abs(cell->face(face)->center()[2]) - 2.0) < TOL_1 )
+    //      if ( std::abs(std::abs(cell->face(face)->center()[0])) > TOL_2 && std::abs(std::abs(cell->face(face)->center()[1])) > TOL_2 ) {
+    //        cell->face(face)->set_boundary_id(bc_dirichlet);
+    //      } else {
+    //        cell->face(face)->set_boundary_id(bc_robin);
+    //      }
+    //  }
   }
 
   template class KirasFMGridGenerator<3>;

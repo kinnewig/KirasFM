@@ -431,7 +431,7 @@ void MaxwellProblem<dim>::assemble_system() {
       // We apply the robin boundary to the robin_boundary (boundary_id = 0)
       // additionally we also apply the robin boundary to the dirichlet_boundary
       // (boundary_id = 1) to avoid reflections on that surface
-      if ( cell->face(face)->boundary_id() < 2 ) {
+      if ( cell->face(face)->boundary_id() == 0 ) {
         /*
          * Assamble the block B
          *

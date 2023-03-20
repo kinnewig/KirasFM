@@ -1,5 +1,6 @@
   // === C++ Includes ===
 #include <iostream>
+#include <algorithm>    // std::sort
 
 #include <boost/mpi.hpp>
 #include <boost/mpi/environment.hpp>
@@ -179,16 +180,16 @@ namespace KirasFM {
       /*
        *  Silver ball in vacuum (3D only)
        */
-      std::vector<double> layer_thickness = {2.00, 1.4, 0.6};
+      std::vector<double> layer_thickness = {2.00, 1.7, 1.2, 0.8};
       ddm_gg.create_parted_nano_particle(
         thm[i].return_triangulation(),
         1.0, /*  radius of the silver ball */
         layer_thickness
       );
 
-      std::string name = "Grid-" + std::to_string(owned_problems[i]) + ".vtk";
-      std::ofstream output_file1(name.c_str());
-      GridOut().write_vtk(thm[i].return_triangulation(), output_file1);
+      //std::string name = "Grid-" + std::to_string(owned_problems[i]) + ".vtk";
+      //std::ofstream output_file1(name.c_str());
+      //GridOut().write_vtk(thm[i].return_triangulation(), output_file1);
 
 //      ddm_gg.refine_nano_particle(
 //        thm[i].return_triangulation(),
@@ -250,6 +251,7 @@ namespace KirasFM {
       world.recv(proc_previous(), world_rank, g_tmp);
       g_in = g_tmp;
     }
+
 
     // Distribute g_in:
     for( unsigned int i = 0; i < owned_problems.size(); i++ ) 
@@ -468,19 +470,26 @@ int main(int argc, char *argv[]) {
     int neighbor_id[4][2] = {{1,3}, {-1,1}, {-1,1}, {-3,-1}};
     for(unsigned int i = 0; i < size; i++) {
 
-      if( i / 8 != 0 )
+      unsigned int layer_id     = i / 8;
+      unsigned int subdomain_id = i % 8;
+
+      if( layer_id != 0 )
         connectivity[i].push_back(i - 8);
 
       // inter-layer neighbors
-      if ( i < 4 )
+      if ( subdomain_id < 4 )
         connectivity[i].push_back(i + 4);
-      if ( i >= 4 )
+      if ( subdomain_id >= 4 )
         connectivity[i].push_back(i - 4);
-      connectivity[i].push_back( neighbor_id[i % 4][0] );
-      connectivity[i].push_back( neighbor_id[i % 4][1] );
 
-      if( i / 8 != slizes - 1 )
+      unsigned int halp = (subdomain_id < 4) ? subdomain_id : subdomain_id - 4;
+      connectivity[i].push_back( i + neighbor_id[halp][0] );
+      connectivity[i].push_back( i + neighbor_id[halp][1] );
+
+      if( layer_id != slizes - 1 )
         connectivity[i].push_back(i + 8);
+
+      std::sort(connectivity[i].begin(), connectivity[i].end());
     }
 
 //    // --- For debugging ---
