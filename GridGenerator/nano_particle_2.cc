@@ -96,12 +96,12 @@ namespace KirasFM_Grid_Generator {
         else if ( std::abs(std::abs(cell->face(face)->center()[2]) - outer_radius) < TOL )
           cell->face(face)->set_boundary_id(z_back);
 
-        else if( cell->face(face)->center().norm() < (inner_radius + outer_radius) / 2) {
+        else if( cell->face(face)->center().norm() < ((3.0 * inner_radius) + outer_radius) / 4.0) {
           cell->face(face)->set_all_manifold_ids(0);
           cell->face(face)->set_boundary_id(6);
         }
 
-        else if( cell->face(face)->center().norm() > (inner_radius + outer_radius) / 2) {
+        else if( cell->face(face)->center().norm() > ((3.0 * inner_radius) + outer_radius) / 4.0) {
           cell->face(face)->set_all_manifold_ids(0);
           cell->face(face)->set_boundary_id(7);
         }
