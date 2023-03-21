@@ -173,7 +173,7 @@ namespace KirasFM_Grid_Generator {
             {0,3,4}
     };
 
-    const unsigned int bc_dirichlet = 0;
+    const unsigned int bc_dirichlet = 1;
     const unsigned int bc_robin     = 0;
 
     double outsides_associated_ids[8][3] = {
@@ -206,14 +206,23 @@ namespace KirasFM_Grid_Generator {
         else if ( cell->face(face)->boundary_id() == 7 )
           cell->face(face)->set_boundary_id(domain_id - 8 + 2);
 
-        else if ( cell->face(face)->boundary_id() == outsides[subdomain_id][0] )
+        else if ( cell->face(face)->boundary_id() == outsides[subdomain_id][0] ) {
           cell->face(face)->set_boundary_id(outsides_associated_ids[subdomain_id][0]);
+          if (outsides_associated_ids[subdomain_id][2] == bc_robin)
+            cell->set_material_id(3);
+        }
 
-        else if ( cell->face(face)->boundary_id() == outsides[subdomain_id][1] )
+        else if ( cell->face(face)->boundary_id() == outsides[subdomain_id][1] ) {
           cell->face(face)->set_boundary_id(outsides_associated_ids[subdomain_id][1]);
+          if (outsides_associated_ids[subdomain_id][2] == bc_robin)
+            cell->set_material_id(3);
+        }
 
-        else if ( cell->face(face)->boundary_id() == outsides[subdomain_id][2] )
+        else if ( cell->face(face)->boundary_id() == outsides[subdomain_id][2] ) {
           cell->face(face)->set_boundary_id(outsides_associated_ids[subdomain_id][2]);
+          if (outsides_associated_ids[subdomain_id][2] == bc_robin)
+            cell->set_material_id(3);
+        }
       }
   }
 
