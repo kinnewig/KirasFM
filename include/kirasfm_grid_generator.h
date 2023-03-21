@@ -68,52 +68,100 @@ namespace KirasFM_Grid_Generator {
       );
 
       // === Nano Particle ===
-      void
-      quarter_ball_embedding (
+      // --- Creation of the full embeddings ---
+      void ball_embedding (
         Triangulation<dim> &tria,
-        double outer_radius, /* outer radius */
-        double inner_radius  /* inner radius */
+        double              outer_radius,
+        double              inner_radius,
+        bool                colorize = true
       );
 
-      void
-      quarter_ball_embedding_inverse (
+      void ball_embedding_inverse (
         Triangulation<dim> &tria,
-        double outer_radius, /* outer radius */
-        double inner_radius  /* inner radius */
+        double              outer_radius,
+        bool                colorize = true
       );
 
-      void quarter_shell_embedding ( Triangulation<dim> & tria, double outer_radius, double inner_radius );
+      void shell_embedding (
+        Triangulation<dim> &tria,
+        double              outer_radius,
+        double              inner_radius ,
+        bool                colorize = true
+      );
 
-      void ball_embedding( Triangulation<dim> &tria, double outer_radius, double inner_radius );
-      void ball_embedding( Triangulation<dim> &tria, double outer_radius, double inner_radius, const unsigned int part );
+      // --- Creation of the half embeddings ---
+      void ball_embedding_half (
+        Triangulation<dim> &tria,
+        double              outer_radius,
+        double              inner_radius,
+        unsigned int        part,
+        bool                colorize = true
+      );
 
-      void ball_embedding_inverse( Triangulation<dim> &tria, double outer_radius );
-      void ball_embedding_inverse( Triangulation<dim> &tria, double outer_radius, const unsigned int part );
+      void ball_embedding_inverse_half (
+        Triangulation<dim> &tria,
+        double              outer_radius,
+        unsigned int        part,
+        bool                colorize = true
+      );
 
-      void shell_embedding( Triangulation<dim> &tria, double outer_radius, double inner_radius );
-      void shell_embedding( Triangulation<dim> &tria, double outer_radius, double inner_radius, const unsigned int part );
+      void shell_embedding_half (
+        Triangulation<dim> &tria,
+        double              outer_radius,
+        double              inner_radius,
+        unsigned int        part,
+        bool                colorize = true
+      );
 
-      void shell_embedding_filled ( Triangulation<dim> &tria, double outer_radius );
+      // --- Creation of the eighth embeddings ---
+      void ball_embedding_eighth (
+        Triangulation<dim> &tria,
+        double              outer_radius,
+        double              inner_radius,
+        unsigned int        part,
+        bool                colorize = true
+      );
 
+      void ball_embedding_inverse_eighth (
+        Triangulation<dim> &tria,
+        double              outer_radius,
+        unsigned int        part,
+        bool                colorize = true
+      );
+
+      void shell_embedding_eighth (
+        Triangulation<dim> &tria,
+        double              outer_radius,
+        double              inner_radius,
+        unsigned int        part,
+        bool                colorize = true
+      );
+
+      // --- create the nano particle itself ---
       void create_nano_particle (
         Triangulation<dim> &tria,
         double ball_radius, /* radius of the silver ball */
         std::vector<double> /* List with the thickness of the dirrerent layers*/
       );
 
-      void create_parted_nano_particle (
+      void create_half_nano_particle (
         Triangulation<dim> &tria,
         double ball_radius, /* radius of the silver ball */
         std::vector<double> /* List with the thickness of the dirrerent layers*/
       );
 
-      void
-      refine_nano_particle (
+
+      void create_eighth_nano_particle (
+        Triangulation<dim> &tria,
+        double ball_radius, /* radius of the silver ball */
+        std::vector<double> /* List with the thickness of the dirrerent layers*/
+      );
+
+      void refine_nano_particle (
         Triangulation<dim> &tria,
         double radius_refine,
         double radius_coarsen
       );
-
 
       // === Gallium Laser ===
       void
