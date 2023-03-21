@@ -129,6 +129,8 @@ namespace KirasFM_Grid_Generator {
       for ( const auto &cell : tria.cell_iterators() )
         for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++) {
           // skip all faces that are not located at the boundary
+          if ( !cell->face(face)->at_boundary() )
+            continue;
 
           if ( cell->face(face)->boundary_id() == neighbor[neighbor_case][0] )
             cell->face(face)->set_boundary_id(domain_id + neighbor_shift[neighbor_case][0] + 2);
@@ -173,7 +175,7 @@ namespace KirasFM_Grid_Generator {
             {0,3,4}
     };
 
-    const unsigned int bc_dirichlet = 1;
+    const unsigned int bc_dirichlet = 32 + 2;
     const unsigned int bc_robin     = 0;
 
     double outsides_associated_ids[8][3] = {
@@ -190,6 +192,8 @@ namespace KirasFM_Grid_Generator {
     for ( const auto &cell : tria.cell_iterators() )
       for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++) {
         // skip all faces that are not located at the boundary
+        if ( !cell->face(face)->at_boundary() )
+          continue;
 
         if ( cell->face(face)->boundary_id() == neighbor[neighbor_case][0] )
           cell->face(face)->set_boundary_id(domain_id + neighbor_shift[neighbor_case][0] + 2);
@@ -303,7 +307,7 @@ namespace KirasFM_Grid_Generator {
     const unsigned int subdomain_id = domain_id % 8;
 
     // check that we stay in range
-    AssertIndexRange(layer_id, layer_thickness.size());
+    AssertIndexRange(layer_id, layer_thickness.size() + 1);
 
     // Create the most outer shell
     if ( layer_id == 0 ) {
@@ -329,6 +333,52 @@ namespace KirasFM_Grid_Generator {
       mark_ball<dim>(tria, ball_radius, Point<dim>(0.0, 0.0, 0.0), 1);
     }
 
+    else if ( layer_id == layer_thickness.size() ) {
+      double outer_radius = layer_thickness[0];
+
+      double TOL                = 0.001;
+      double thickness          = 0.2;
+      unsigned int bc_dirichlet = 1;
+
+      // create the grid
+      unsigned int r = std::pow(refinements, 2);
+      GridGenerator::subdivided_hyper_rectangle (
+        tria,
+        std::vector<unsigned int>({r, r, refinements}),
+        Point<dim>(-outer_radius, -outer_radius, outer_radius),
+        Point<dim>(outer_radius, outer_radius, outer_radius + thickness)
+      );
+
+      // mark the interfaces
+      for ( const auto &cell : tria.cell_iterators() )
+        for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++) {
+          // skip all faces that are not located at the boundary
+          if ( !cell->face(face)->at_boundary() )
+            continue;
+
+          if ( std::abs(cell->face(face)->center()[2] - outer_radius) < TOL ) {
+            if ( cell->face(face)->center()[0] > 0 ) {
+              if ( cell->face(face)->center()[1] > 0 ) {
+                cell->face(face)->set_boundary_id(3 + 2);
+              } else {
+                cell->face(face)->set_boundary_id(2 + 2);
+              }
+            } else {
+              if ( cell->face(face)->center()[1] > 0 ) {
+                cell->face(face)->set_boundary_id(7 + 2);
+              } else {
+                cell->face(face)->set_boundary_id(6 + 2);
+              }
+            }
+          }
+
+          if ( std::abs(cell->face(face)->center()[2] - (outer_radius + thickness)) < TOL ) {
+            cell->face(face)->set_boundary_id(bc_dirichlet);
+          }
+
+        }
+    }
+
     else {
       double inner_radius = layer_thickness[layer_id + 1];
       double outer_radius = layer_thickness[layer_id];
@@ -342,22 +392,6 @@ namespace KirasFM_Grid_Generator {
       mark_ball<dim>(tria, ball_radius, Point<dim>(0.0, 0.0, 0.0), 1);
     }
 
-    //const unsigned int bc_dirichlet = 1;
-    //const unsigned int bc_robin     = 0;
-    //double TOL_1 = 0.001;
-    //double TOL_2 = 0.5;
-    //for ( const auto &cell : tria.cell_iterators() )
-    //  for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++) {
-    //    if(!cell->face(face)->at_boundary())
-    //      continue;
-
-    //    if ( std::abs(std::abs(cell->face(face)->center()[2]) - 2.0) < TOL_1 )
-    //      if ( std::abs(std::abs(cell->face(face)->center()[0])) > TOL_2 && std::abs(std::abs(cell->face(face)->center()[1])) > TOL_2 ) {
-    //        cell->face(face)->set_boundary_id(bc_dirichlet);
-    //      } else {
-    //        cell->face(face)->set_boundary_id(bc_robin);
-    //      }
-    //  }
   }
 
   template class KirasFMGridGenerator<3>;
