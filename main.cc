@@ -93,7 +93,7 @@ namespace KirasFM {
     cpus_per_domain(cpus_per_domain),
 
     slizes(slizes),
-    size(slizes * 8),
+    size(slizes * 8 + 1),
 
     domain_map(std::vector<std::vector<unsigned int>>(size)),
 
@@ -464,11 +464,23 @@ int main(int argc, char *argv[]) {
     );
 
     // create the connectivity map
-    const unsigned int size = slizes * 8;
+    const unsigned int size = slizes * 8 + 1;
     std::vector<std::vector<unsigned int>> connectivity(size);
 
     int neighbor_id[4][2] = {{1,3}, {-1,1}, {-1,1}, {-3,-1}};
     for(unsigned int i = 0; i < size; i++) {
+
+      // special case
+      if ( i == 2 || i == 3 || i == 6 || i == 7 )
+        connectivity[i].push_back(size - 1);
+
+      if (i == size - 1 ) {
+        connectivity[i].push_back(2);
+        connectivity[i].push_back(3);
+        connectivity[i].push_back(6);
+        connectivity[i].push_back(7);
+        continue;
+      }
 
       unsigned int layer_id     = i / 8;
       unsigned int subdomain_id = i % 8;
