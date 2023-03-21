@@ -68,44 +68,30 @@ namespace KirasFM_Grid_Generator {
       );
 
       // === Nano Particle ===
-      void
-      quarter_ball_embedding (
-        Triangulation<dim> &tria,
-        double outer_radius, /* outer radius */
-        double inner_radius  /* inner radius */
-      );
+      // eighth embeddings:
+      void eighth_ball_embedding ( Triangulation<dim> &tria, const double inner_radius, const double outer_radius );
+      void eighth_ball_embedding_inverse ( Triangulation<dim> &tria, const double inner_radius,  const double outer_radius );
+      void eighth_shell_embedding ( Triangulation<dim> & tria, const double inner_radius, const double outer_radius );
 
-      void
-      quarter_ball_embedding_inverse (
-        Triangulation<dim> &tria,
-        double outer_radius, /* outer radius */
-        double inner_radius  /* inner radius */
-      );
+      // quarter embeddings:
+      void quarter_ball_embedding ( Triangulation<dim> &tria, const double inner_radius, const double outer_radius, const unsigned int part, bool colorize = true );
+      void quarter_ball_embedding_inverse ( Triangulation<dim> &tria, const double outer_radius, const unsigned int part, const bool colorize = true );
+      void quarter_shell_embedding ( Triangulation<dim> & tria, const double inner_radius, const double outer_radius, const unsigned int part, bool colorize = true );
 
-      void quarter_shell_embedding ( Triangulation<dim> & tria, double outer_radius, double inner_radius );
+      // quarter embeddings:
+      void half_ball_embedding ( Triangulation<dim> &tria, const double inner_radius, const double outer_radius, const unsigned int part, bool colorize = true );
+      void half_ball_embedding_inverse ( Triangulation<dim> &tria, const double outer_radius, const unsigned int part, const bool colorize = true );
+      void half_shell_embedding ( Triangulation<dim> & tria, const double inner_radius, const double outer_radius, const unsigned int part, bool colorize = true );
 
-      void ball_embedding( Triangulation<dim> &tria, double outer_radius, double inner_radius );
-      void ball_embedding( Triangulation<dim> &tria, double outer_radius, double inner_radius, const unsigned int part );
+      // full embeddings:
+      void full_ball_embedding ( Triangulation<dim> &tria, const double inner_radius, const double outer_radius, bool colorize = true );
+      void full_ball_embedding_inverse ( Triangulation<dim> &tria, const double outer_radius, const bool colorize = true );
+      void full_shell_embedding ( Triangulation<dim> & tria, const double inner_radius, const double outer_radius, bool colorize = true );
 
-      void ball_embedding_inverse( Triangulation<dim> &tria, double outer_radius );
-      void ball_embedding_inverse( Triangulation<dim> &tria, double outer_radius, const unsigned int part );
-
-      void shell_embedding( Triangulation<dim> &tria, double outer_radius, double inner_radius );
-      void shell_embedding( Triangulation<dim> &tria, double outer_radius, double inner_radius, const unsigned int part );
-
-      void shell_embedding_filled ( Triangulation<dim> &tria, double outer_radius );
-
-      void create_nano_particle (
-        Triangulation<dim> &tria,
-        double ball_radius, /* radius of the silver ball */
-        std::vector<double> /* List with the thickness of the dirrerent layers*/
-      );
-
-      void create_parted_nano_particle (
-        Triangulation<dim> &tria,
-        double ball_radius, /* radius of the silver ball */
-        std::vector<double> /* List with the thickness of the dirrerent layers*/
-      );
+      // create the nano particle itself
+      void create_quarter_nano_particle ( Triangulation<dim> &tria, const double ball_radius, std::vector<double> layer_thickness );
+      void create_half_nano_particle ( Triangulation<dim> &tria, const double ball_radius, std::vector<double> layer_thickness );
+      void create_nano_particle ( Triangulation<dim> &tria, const double ball_radius, std::vector<double> layer_thickness );
 
       void
       refine_nano_particle (
