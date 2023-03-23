@@ -15,13 +15,13 @@
 #include <kirasfm_grid_generator.h>
 #include <deal.II/grid/grid_out.h>
 
-// Switch to selcet between full sphere , half sphere or quarter_sphere
-const unsigned int selector = 1; // full sphere
-//const unsigned int selector = 1; // half sphere
-//const unsigned int selector = 2; // quarter sphere
-
 namespace KirasFM {
   using namespace dealii;
+
+  // Switch to selcet between full sphere , half sphere or quarter_sphere
+  //unsigned int selector = 0; // full sphere
+  unsigned int selector = 1; // half sphere
+  //unsigned int selector = 2; // eighth sphere
 
   template<int dim>
   class DDM {
@@ -98,7 +98,6 @@ namespace KirasFM {
     cpus_per_domain(cpus_per_domain),
 
     slizes(slizes),
-
     size( (selector == 0) ? slizes : ( (selector == 1) ? slizes * 2 : slizes * 8) ),
 
     domain_map(std::vector<std::vector<unsigned int>>(size)),
@@ -168,33 +167,44 @@ namespace KirasFM {
 //    const unsigned int scale       = prm.get_double("Mesh & geometry parameters", "Size of grid");
 
     for( unsigned int i = 0; i < owned_problems.size(); i++ ) {
-      // Simple Block Benchmark (2D & 3D)
       KirasFM_Grid_Generator::KirasFMGridGenerator<dim> ddm_gg(owned_problems[i], size, refinements);
+      //  Silver ball in vacuum (3D only)
 
-       // Silver ball in vacuum (3D only)
-      std::vector<double> layer_thickness = {2.00, 1.4, 0.6};
-
+      std::vector<double> layer_thickness = {2.00, 1.7, 1.2, 0.8};
       if ( selector == 0 ) {
-        ddm_gg.create_nano_particle (
+        ddm_gg.create_nano_particle(
           thm[i].return_triangulation(),
           1.0, /*  radius of the silver ball */
           layer_thickness
         );
       }
       else if ( selector == 1 ) {
-        ddm_gg.create_half_nano_particle (
+        ddm_gg.create_half_nano_particle(
           thm[i].return_triangulation(),
           1.0, /*  radius of the silver ball */
           layer_thickness
         );
       }
       else if ( selector == 2 ) {
-        ddm_gg.create_quarter_nano_particle (
+        ddm_gg.create_eighth_nano_particle(
           thm[i].return_triangulation(),
           1.0, /*  radius of the silver ball */
           layer_thickness
         );
       }
+      else {
+        Assert(false, ExcInternalError());
+      }
+
+//      std::string name = "Grid-" + std::to_string(owned_problems[i]) + ".vtk";
+//      std::ofstream output_file1(name.c_str());
+//      GridOut().write_vtk(thm[i].return_triangulation(), output_file1);
+
+//      ddm_gg.refine_nano_particle(
+//        thm[i].return_triangulation(),
+//        0.95,
+//        0.5
+//      );
     }
 
     // initalize the maxwell problems:
@@ -455,68 +465,64 @@ int main(int argc, char *argv[]) {
     );
 
     // create the connectivity map
-    unsigned int size =  (selector == 0) ? slizes : ( (selector == 1) ? slizes * 2 : slizes * 8);
+    const unsigned int size = (selector == 0) ? slizes : ( (selector == 1) ? slizes * 2 : slizes * 8);
     std::vector<std::vector<unsigned int>> connectivity(size);
 
     if ( selector == 0 ) {
       for(unsigned int i = 0; i < size; i++) {
-
-        if( i != 0 )
+        if (i != 0)
           connectivity[i].push_back(i - 1);
 
-        if( i != slizes - 1 )
+        if (i != size - 1)
           connectivity[i].push_back(i + 1);
-
-        std::sort(connectivity[i].begin(), connectivity[i].end());
       }
     }
     else if ( selector == 1 ) {
       for(unsigned int i = 0; i < size; i++) {
-
         unsigned int layer_id     = i / 2;
         unsigned int subdomain_id = i % 2;
 
-        if( i != 0 )
-          connectivity[i].push_back(i - 1);
+        if (layer_id != 0)
+          connectivity[i].push_back(i - 2);
 
-        // inter-layer neighbors
         if ( subdomain_id == 0 )
           connectivity[i].push_back(i + 1);
+
         if ( subdomain_id == 1 )
           connectivity[i].push_back(i - 1);
 
-        if( i != slizes - 1 )
-          connectivity[i].push_back(i + 1);
-
-        std::sort(connectivity[i].begin(), connectivity[i].end());
+        if (layer_id != slizes - 1)
+          connectivity[i].push_back(i + 2);
       }
     }
     else if ( selector == 2 ) {
       int neighbor_id[4][2] = {{1,3}, {-1,1}, {-1,1}, {-3,-1}};
       for(unsigned int i = 0; i < size; i++) {
 
-        unsigned int layer_id     = i / 8;
+        unsigned int layer_id = i / 8;
         unsigned int subdomain_id = i % 8;
 
-        if( layer_id != 0 )
+        if (layer_id != 0)
           connectivity[i].push_back(i - 8);
 
         // inter-layer neighbors
-        if ( subdomain_id < 4 )
+        if (subdomain_id < 4)
           connectivity[i].push_back(i + 4);
-        if ( subdomain_id >= 4 )
+        if (subdomain_id >= 4)
           connectivity[i].push_back(i - 4);
 
         unsigned int halp = (subdomain_id < 4) ? subdomain_id : subdomain_id - 4;
-        connectivity[i].push_back( i + neighbor_id[halp][0] );
-        connectivity[i].push_back( i + neighbor_id[halp][1] );
+        connectivity[i].push_back(i + neighbor_id[halp][0]);
+        connectivity[i].push_back(i + neighbor_id[halp][1]);
 
-        if( layer_id != slizes - 1 )
+        if (layer_id != slizes - 1)
           connectivity[i].push_back(i + 8);
 
         std::sort(connectivity[i].begin(), connectivity[i].end());
       }
-
+    }
+    else {
+      Assert(false, ExcInternalError());
     }
 
 //    // --- For debugging ---
