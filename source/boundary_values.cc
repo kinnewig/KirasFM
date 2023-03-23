@@ -43,11 +43,11 @@ namespace KirasFM {
 
     // === Silverball ===
     values(0) = 1.0;
-    values(1) = 1.0;
-    values(2) = 1.0;
-    values(3) = 1.0;
-    values(4) = 1.0;
-    values(5) = 1.0;
+    values(1) = 0.0;
+    values(2) = 0.0;
+    values(3) = 0.0;
+    values(4) = 0.0;
+    values(5) = 0.0;
 
 //    // === Diamond Fin ===
 //    double block_size = 1.0;

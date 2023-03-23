@@ -999,30 +999,5 @@ namespace KirasFM_Grid_Generator {
 
     }
 
-  template<int dim>
-  void KirasFMGridGenerator<dim>::refine_nano_particle (
-    Triangulation<dim> &tria,
-    double radius_refine,
-    double radius_coarsen
-  ) {
-  for (auto &cell : tria.cell_iterators()) {
-    // if the cell is inside the radius mark it for refinement
-    if(!cell->is_locally_owned())
-      continue;
-
-    if ( cell->center().norm() >= radius_refine )
-      cell->set_refine_flag();
-
-    if ( cell->center().norm() <= radius_coarsen )
-      cell->set_coarsen_flag();
-  }
-
-  // prepare the triangulation for refinement,
-  tria.prepare_coarsening_and_refinement();
-
-  // actually execute the refinement,
-  tria.execute_coarsening_and_refinement();
-}
-
   template class KirasFMGridGenerator<3>;
 } // KirasFM_Grid_Generator

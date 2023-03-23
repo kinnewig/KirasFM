@@ -157,12 +157,6 @@ namespace KirasFM_Grid_Generator {
         std::vector<double> /* List with the thickness of the dirrerent layers*/
       );
 
-      void refine_nano_particle (
-        Triangulation<dim> &tria,
-        double radius_refine,
-        double radius_coarsen
-      );
-
       // === Gallium Laser ===
       void
       make_gallium_laser (

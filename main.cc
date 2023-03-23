@@ -38,10 +38,12 @@ namespace KirasFM {
 
       void initialize();
       void step(std::vector<std::vector<unsigned int>> connectivity);
+
+      // refinement methods:
       void prepare_refine(std::vector<std::vector<unsigned int>> connectivity);
       void refine();
-
       void mark_circular(double radius);
+      void mark_adaptive();
 
       void print_result() const;
 
@@ -170,7 +172,7 @@ namespace KirasFM {
       KirasFM_Grid_Generator::KirasFMGridGenerator<dim> ddm_gg(owned_problems[i], size, refinements);
       //  Silver ball in vacuum (3D only)
 
-      std::vector<double> layer_thickness = {2.00, 1.7, 1.2, 0.8};
+      std::vector<double> layer_thickness = {2.00, 1.4, 0.6};
       if ( selector == 0 ) {
         ddm_gg.create_nano_particle(
           thm[i].return_triangulation(),
@@ -199,12 +201,6 @@ namespace KirasFM {
 //      std::string name = "Grid-" + std::to_string(owned_problems[i]) + ".vtk";
 //      std::ofstream output_file1(name.c_str());
 //      GridOut().write_vtk(thm[i].return_triangulation(), output_file1);
-
-//      ddm_gg.refine_nano_particle(
-//        thm[i].return_triangulation(),
-//        0.95,
-//        0.5
-//      );
     }
 
     // initalize the maxwell problems:
@@ -361,6 +357,23 @@ namespace KirasFM {
         if (std::sqrt(distance) < radius)
           cell->set_refine_flag();
       }
+  }
+
+  template<int dim>
+  void DDM<dim>::mark_adaptive() {
+    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
+      thm[i].mark_for_refinement_error_estimator();
+
+    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
+      thm[i].return_triangulation().prepare_coarsening_and_refinement();
+
+    double radius = 0.9;
+    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
+      for (auto &cell : thm[i].return_triangulation().cell_iterators())
+        if (cell->center().norm() < radius)
+          cell->clear_refine_flag();
+
+
   }
 
   template<int dim>
@@ -566,14 +579,13 @@ int main(int argc, char *argv[]) {
           pcout << "==================================================================" << std::endl;
           pcout << "INITIALIZE:" << std::endl;
           problem.initialize();
-//          problem.mark_circular(0.3);
-//          problem.prepare_refine(connectivity);
-//          problem.refine();
           for( unsigned int i = 0; i < prm.get_integer("Mesh & geometry parameters", "Number of global iterations"); i++ ) {
 //          for( unsigned int i = 0; i < 0; i++ ) {
             pcout << "==================================================================" << std::endl;
             pcout << "STEP " << i + 1 << ":" << std::endl;
-            if( false ) {
+            if( i == 5 ) {
+              problem.mark_adaptive();
+              problem.prepare_refine(connectivity);
               problem.prepare_refine(connectivity);
               problem.refine();
             } else {
