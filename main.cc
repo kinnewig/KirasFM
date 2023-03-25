@@ -19,8 +19,8 @@ namespace KirasFM {
   using namespace dealii;
 
   // Switch to selcet between full sphere , half sphere or quarter_sphere
-  //unsigned int selector = 0; // full sphere
-  unsigned int selector = 1; // half sphere
+  unsigned int selector = 0; // full sphere
+  //unsigned int selector = 1; // half sphere
   //unsigned int selector = 2; // eighth sphere
 
   template<int dim>
@@ -342,21 +342,10 @@ namespace KirasFM {
   template<int dim>
   void DDM<dim>::mark_circular(double radius) {
 
-    unsigned int axis = 2;
-    Point<dim> center(0.5, 0.5, 0);
-
     for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-
-      for (auto &cell : thm[i].return_triangulation().cell_iterators()) {
-        double distance = 0;
-        for (unsigned int j = 0; j < dim; j++)
-          if (j != axis)
-            distance += std::pow(cell->center()[j] - center[j], 2);
-
-        // if the cell is inside the radius mark it for refinement
-        if (std::sqrt(distance) < radius)
+      for (auto &cell : thm[i].return_triangulation().cell_iterators()) 
+        if (cell->center().norm() > radius)
           cell->set_refine_flag();
-      }
   }
 
   template<int dim>
@@ -579,11 +568,14 @@ int main(int argc, char *argv[]) {
           pcout << "==================================================================" << std::endl;
           pcout << "INITIALIZE:" << std::endl;
           problem.initialize();
+          problem.mark_circular(0.9);
+          problem.prepare_refine(connectivity);
+          problem.refine();
           for( unsigned int i = 0; i < prm.get_integer("Mesh & geometry parameters", "Number of global iterations"); i++ ) {
 //          for( unsigned int i = 0; i < 0; i++ ) {
             pcout << "==================================================================" << std::endl;
             pcout << "STEP " << i + 1 << ":" << std::endl;
-            if( i == 5 ) {
+            if( false ) {
               problem.mark_adaptive();
               problem.prepare_refine(connectivity);
               problem.prepare_refine(connectivity);
