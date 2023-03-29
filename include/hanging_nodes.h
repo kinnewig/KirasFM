@@ -247,12 +247,12 @@ void bullshit_hanging_nodes_constraints_3d(
       // Number of external lines of the children
       // +---6--------7--+
       // |       .       |
-	  // 1  c2   .   c3  3
+      // 1  c2   .   c3  3
       // |       .       |
-	  // |...............|
+      // | . . . . . . . |
       // |       .       |
-	  // 0  c0   .   c1  2
-	  // |       .       |
+      // 0  c0   .   c1  2
+      // |       .       |
       // +---4---+---5---+
       const unsigned int n_external_lines_on_children = 8;
 

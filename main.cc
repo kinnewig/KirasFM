@@ -19,8 +19,8 @@ namespace KirasFM {
   using namespace dealii;
 
   // Switch to selcet between full sphere , half sphere or quarter_sphere
-  unsigned int selector = 0; // full sphere
-  //unsigned int selector = 1; // half sphere
+  //unsigned int selector = 0; // full sphere
+  unsigned int selector = 1; // half sphere
   //unsigned int selector = 2; // eighth sphere
 
   template<int dim>
@@ -43,7 +43,11 @@ namespace KirasFM {
       void prepare_refine(std::vector<std::vector<unsigned int>> connectivity);
       void refine();
       void mark_circular(double radius);
+      void mark_circular_coarser(double radius);
+      void mark_shell_coarser(double inner_radius, double outer_radius);
       void mark_adaptive();
+
+      void fix_stupid_material_id();
 
       void print_result() const;
 
@@ -172,7 +176,7 @@ namespace KirasFM {
       KirasFM_Grid_Generator::KirasFMGridGenerator<dim> ddm_gg(owned_problems[i], size, refinements);
       //  Silver ball in vacuum (3D only)
 
-      std::vector<double> layer_thickness = {2.00, 1.4, 0.6};
+      std::vector<double> layer_thickness = {2.0, 1.7, 0.95, 0.7};
       if ( selector == 0 ) {
         ddm_gg.create_nano_particle(
           thm[i].return_triangulation(),
@@ -198,9 +202,20 @@ namespace KirasFM {
         Assert(false, ExcInternalError());
       }
 
-//      std::string name = "Grid-" + std::to_string(owned_problems[i]) + ".vtk";
-//      std::ofstream output_file1(name.c_str());
-//      GridOut().write_vtk(thm[i].return_triangulation(), output_file1);
+      mark_circular_coarser(0.87);
+      mark_shell_coarser(1.05, 3.0);
+      //prepare_refine(connectivity);
+      refine();
+      mark_circular_coarser(0.92);
+      mark_shell_coarser(1.4, 3.0);
+      //problem.prepare_refine(connectivity);
+      refine();
+
+      fix_stupid_material_id();
+
+      //std::string name = "Grid-" + std::to_string(owned_problems[i]) + ".vtk";
+      //std::ofstream output_file1(name.c_str());
+      //GridOut().write_vtk(thm[i].return_triangulation(), output_file1);
     }
 
     // initalize the maxwell problems:
@@ -361,22 +376,58 @@ namespace KirasFM {
       for (auto &cell : thm[i].return_triangulation().cell_iterators())
         if (cell->center().norm() < radius)
           cell->clear_refine_flag();
-
-
   }
+
+  template<int dim>
+  void DDM<dim>::mark_circular_coarser(double radius) {
+    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
+      for (auto &cell : thm[i].return_triangulation().cell_iterators()) {
+        if (!cell->is_active())
+          continue;
+
+        if (cell->center().norm() < radius)
+          cell->set_coarsen_flag();
+      }
+  }
+
+  template<int dim>
+  void DDM<dim>::mark_shell_coarser(double inner_radius, double outer_radius) {
+    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
+      for (auto &cell : thm[i].return_triangulation().cell_iterators()) {
+        if (!cell->is_active())
+          continue;
+
+        if (cell->center().norm() > inner_radius && cell->center().norm() < outer_radius)
+          cell->set_coarsen_flag();
+      }
+  }
+
+
+    template<int dim>
+    void DDM<dim>::fix_stupid_material_id() {
+      for ( unsigned int i = 0; i < owned_problems.size(); i++ )
+        for (auto &cell : thm[i].return_triangulation().cell_iterators()) {
+          if (!cell->is_active())
+            continue;
+
+          cell->set_material_id(0);
+
+          bool in_ball = true;
+          for ( unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++ )
+            if (cell->face(face)->center().norm() > 1) {
+              in_ball = false;
+              break;
+            }
+
+          if ( in_ball )
+            cell->set_material_id(1);
+        }
+    }
 
   template<int dim>
   void DDM<dim>::refine() {
     for ( unsigned int i = 0; i < owned_problems.size(); i++ )
       thm[i].refine();
-
-    // initalize the maxwell problems:
-    for( unsigned int i = 0; i < owned_problems.size(); i++ )
-      thm[i].initialize();
-
-    // we already solve it the first time here:
-    for( unsigned int i = 0; i < owned_problems.size(); i++ )
-      thm[i].solve();
 
   }
 
@@ -568,9 +619,7 @@ int main(int argc, char *argv[]) {
           pcout << "==================================================================" << std::endl;
           pcout << "INITIALIZE:" << std::endl;
           problem.initialize();
-          problem.mark_circular(0.9);
-          problem.prepare_refine(connectivity);
-          problem.refine();
+
           for( unsigned int i = 0; i < prm.get_integer("Mesh & geometry parameters", "Number of global iterations"); i++ ) {
 //          for( unsigned int i = 0; i < 0; i++ ) {
             pcout << "==================================================================" << std::endl;

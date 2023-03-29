@@ -431,7 +431,7 @@ void MaxwellProblem<dim>::assemble_system() {
       // We apply the robin boundary to the robin_boundary (boundary_id = 0)
       // additionally we also apply the robin boundary to the dirichlet_boundary
       // (boundary_id = 1) to avoid reflections on that surface
-      if ( cell->face(face)->boundary_id() == 0 ) {
+      if ( cell->face(face)->boundary_id() == 0 || cell->face(face)->boundary_id() == 1 ) {
         /*
          * Assamble the block B
          *
@@ -1673,7 +1673,7 @@ void MaxwellProblem<dim>::mark_for_refinement_error_estimator() {
     GridRefinement::refine_and_coarsen_fixed_number (
             triangulation,
             error_indicators,
-            0.25,
+            0.40,
             0.00
     );
 
