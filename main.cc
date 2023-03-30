@@ -36,7 +36,7 @@ namespace KirasFM {
         const unsigned int slizes
       );
 
-      void initialize();
+      void initialize(std::vector<std::vector<unsigned int>> connectivity);
       void step(std::vector<std::vector<unsigned int>> connectivity);
 
       // refinement methods:
@@ -46,6 +46,7 @@ namespace KirasFM {
       void mark_circular_coarser(double radius);
       void mark_shell_coarser(double inner_radius, double outer_radius);
       void mark_adaptive();
+      void mark_problem(double radius, double TOL);
 
       void fix_stupid_material_id();
 
@@ -165,7 +166,7 @@ namespace KirasFM {
   }
 
   template<int dim>
-  void DDM<dim>::initialize() {
+  void DDM<dim>::initialize(std::vector<std::vector<unsigned int>> connectivity) {
     //if( first_id(proc_id_list, world_rank) ) {
 
     // set up grid:
@@ -203,19 +204,23 @@ namespace KirasFM {
       }
 
       mark_circular_coarser(0.87);
-      mark_shell_coarser(1.05, 3.0);
+      mark_shell_coarser(1.05, 4.0);
       //prepare_refine(connectivity);
       refine();
       mark_circular_coarser(0.92);
-      mark_shell_coarser(1.4, 3.0);
-      //problem.prepare_refine(connectivity);
+      mark_shell_coarser(1.3, 4.0);
+      //prepare_refine(connectivity);
+      refine();
+
+      mark_problem(1.0, 0.05);
+      prepare_refine(connectivity);
       refine();
 
       fix_stupid_material_id();
 
-      //std::string name = "Grid-" + std::to_string(owned_problems[i]) + ".vtk";
-      //std::ofstream output_file1(name.c_str());
-      //GridOut().write_vtk(thm[i].return_triangulation(), output_file1);
+//      std::string name = "Grid-" + std::to_string(owned_problems[i]) + ".vtk";
+//      std::ofstream output_file1(name.c_str());
+//      GridOut().write_vtk(thm[i].return_triangulation(), output_file1);
     }
 
     // initalize the maxwell problems:
@@ -402,6 +407,22 @@ namespace KirasFM {
       }
   }
 
+
+  template<int dim>
+  void DDM<dim>::mark_problem( double radius, double TOL ) {
+
+    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
+      for (auto &cell : thm[i].return_triangulation().cell_iterators()) {
+        if (!cell->is_active())
+          continue;
+
+        if ( cell->center()[2] > TOL || cell->center()[2] < -TOL )
+          continue;
+
+        if (cell->center().norm() > radius - TOL && cell->center().norm() < radius + TOL)
+          cell->set_refine_flag();
+      }
+  }
 
     template<int dim>
     void DDM<dim>::fix_stupid_material_id() {
@@ -618,7 +639,7 @@ int main(int argc, char *argv[]) {
           DDM<3> problem(world, prm, pcout, timer, cpus_per_domain, slizes);
           pcout << "==================================================================" << std::endl;
           pcout << "INITIALIZE:" << std::endl;
-          problem.initialize();
+          problem.initialize(connectivity);
 
           for( unsigned int i = 0; i < prm.get_integer("Mesh & geometry parameters", "Number of global iterations"); i++ ) {
 //          for( unsigned int i = 0; i < 0; i++ ) {
