@@ -363,7 +363,7 @@ namespace KirasFM {
   void DDM<dim>::mark_circular(double radius) {
 
     for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-      for (auto &cell : thm[i].return_triangulation().cell_iterators()) 
+      for (auto &cell : thm[i].return_triangulation().active_cell_iterators()) 
         if (cell->center().norm() > radius)
           cell->set_refine_flag();
   }
@@ -378,7 +378,7 @@ namespace KirasFM {
 
     double radius = 0.9;
     for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-      for (auto &cell : thm[i].return_triangulation().cell_iterators())
+      for (auto &cell : thm[i].return_triangulation().active_cell_iterators())
         if (cell->center().norm() < radius)
           cell->clear_refine_flag();
   }
@@ -386,10 +386,7 @@ namespace KirasFM {
   template<int dim>
   void DDM<dim>::mark_circular_coarser(double radius) {
     for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-      for (auto &cell : thm[i].return_triangulation().cell_iterators()) {
-        if (!cell->is_active())
-          continue;
-
+      for (auto &cell : thm[i].return_triangulation().active_cell_iterators()) {
         if (cell->center().norm() < radius)
           cell->set_coarsen_flag();
       }
@@ -398,10 +395,7 @@ namespace KirasFM {
   template<int dim>
   void DDM<dim>::mark_shell_coarser(double inner_radius, double outer_radius) {
     for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-      for (auto &cell : thm[i].return_triangulation().cell_iterators()) {
-        if (!cell->is_active())
-          continue;
-
+      for (auto &cell : thm[i].return_triangulation().active_cell_iterators()) {
         if (cell->center().norm() > inner_radius && cell->center().norm() < outer_radius)
           cell->set_coarsen_flag();
       }
@@ -412,10 +406,7 @@ namespace KirasFM {
   void DDM<dim>::mark_problem( double radius, double TOL ) {
 
     for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-      for (auto &cell : thm[i].return_triangulation().cell_iterators()) {
-        if (!cell->is_active())
-          continue;
-
+      for (auto &cell : thm[i].return_triangulation().active_cell_iterators()) {
         if ( cell->center()[2] > TOL || cell->center()[2] < -TOL )
           continue;
 
@@ -427,10 +418,7 @@ namespace KirasFM {
     template<int dim>
     void DDM<dim>::fix_stupid_material_id() {
       for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-        for (auto &cell : thm[i].return_triangulation().cell_iterators()) {
-          if (!cell->is_active())
-            continue;
-
+        for (auto &cell : thm[i].return_triangulation().active_cell_iterators()) {
           cell->set_material_id(0);
 
           bool in_ball = true;
