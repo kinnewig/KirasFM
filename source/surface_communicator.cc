@@ -106,6 +106,4 @@ namespace KirasFM{
   }
 
   template class SurfaceCommunicator<2>;
-  template class SurfaceCommunicator<3>;
-
 } // namespace: KirasFM

@@ -75,7 +75,7 @@ MaxwellProblem<dim>::MaxwellProblem(
 
   dof_handler( triangulation ),
 
-  fe( FE_NedelecSK<dim>(
+  fe( FE_NedelecSZ<dim>(
       param.get_integer(
         "Mesh & geometry parameters", 
         "Polynomial degree" ) ), 2 ),
@@ -116,7 +116,7 @@ MaxwellProblem<dim>::MaxwellProblem (
 
   dof_handler( triangulation ),
 
-  fe( FE_NedelecSK<dim>(
+  fe( FE_NedelecSZ<dim>(
       copy.prm.get_integer(
         "Mesh & geometry parameters", 
         "Polynomial degree" ) ), 2 ),
@@ -1838,7 +1838,7 @@ void MaxwellProblem<dim>::update_refine( RefinementCommunicator<dim> r ) {
 
 
 // compile the tamplate with certain parameters
-//template class MaxwellProblem<2>;
-template class MaxwellProblem<3>;
+template class MaxwellProblem<2>;
+//template class MaxwellProblem<3>;
 
 } // namespace: KirasFM

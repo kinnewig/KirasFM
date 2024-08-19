@@ -18,10 +18,113 @@
 namespace KirasFM {
   using namespace dealii;
 
-  // Switch to selcet between full sphere , half sphere or quarter_sphere
-  //unsigned int selector = 0; // full sphere
-  unsigned int selector = 1; // half sphere
-  //unsigned int selector = 2; // eighth sphere
+  template <int dim>
+  void
+  make_grid(Triangulation<dim>& triangulation, unsigned domain, unsigned n_domains, unsigned int refinements)
+  {
+    double start;
+    double end;
+
+    std::vector<unsigned int> repetitions;
+    if (n_domains == 3)
+    {
+      start = 1.0 * ((1.0 * domain));
+      end   = 1.0 * ((1.0 * domain) + 1.0);
+
+      repetitions = (dim == 2) ? std::vector<unsigned int>{1,1} : std::vector<unsigned int>{1, 1, 1};
+    }
+    else if (n_domains == 6)
+    {
+      start = 0.5 * ((1.0 * domain));
+      end   = 0.5 * ((1.0 * domain) + 1.0);
+
+      repetitions = (dim == 2) ? std::vector<unsigned int>{2,1} : std::vector<unsigned int>{2, 1, 2};
+    }
+    else {
+      Assert(false, ExcInternalError());
+    }
+
+    const Point<dim> left_edge =
+      (dim == 2) ? Point<dim>(0.0, start) : Point<dim>(0.0, start, 0.0);
+
+    const Point<dim> right_edge =
+      (dim == 2) ? Point<dim>(1.0, end) : Point<dim>(1.0, end, 1.0);
+
+    std::cout << "On domain " << domain << ": " << left_edge << ", " << right_edge << std::endl;
+
+    // create the rectangle
+    GridGenerator::subdivided_hyper_rectangle(triangulation, repetitions, left_edge, right_edge, true);
+
+    // refine the grid
+    unsigned int actual_refinements = (n_domains == 3) ? refinements : refinements - 1;
+    triangulation.refine_global(actual_refinements);
+
+
+    for (auto &cell : triangulation.active_cell_iterators())
+      {
+        cell->set_material_id(0);
+
+        for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell;
+             ++face)
+          if (cell->face(face)->at_boundary())
+            cell->face(face)->set_boundary_id(0);
+      }
+
+    for (auto &cell : triangulation.active_cell_iterators())
+      {
+        Point<3> center(0.5, 0.5, 0.5);
+        double distance_from_center = 0.0;
+        std::vector<unsigned int> axis = {0, 2};
+        for (unsigned int i = 0; i < dim - 1; ++i)
+          distance_from_center += std::pow(cell->center()[axis[i]] - center[axis[i]], 2.0);
+        distance_from_center = std::sqrt(distance_from_center);
+
+        double radius = 0.2;
+        if (distance_from_center < radius)
+          cell->set_material_id(1);
+
+        for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell;
+             ++face)
+          {
+            if (!cell->face(face)->at_boundary())
+              continue;
+            
+            if (domain == 0)
+              {
+                if (cell->face(face)->center()[1] < start + 1e-8)
+                  cell->face(face)->set_boundary_id(1);
+                else if (cell->face(face)->center()[1] > end - 1e-8)
+                  cell->face(face)->set_boundary_id(domain + 2 + 1);
+                else 
+                  cell->face(face)->set_boundary_id(0);
+              }
+            else if (domain == (n_domains - 1))
+              {
+                if (cell->face(face)->center()[1] < start + 1e-8)
+                  cell->face(face)->set_boundary_id(domain + 2 - 1);
+                else if (cell->face(face)->center()[1] > end - 1e-8)
+                  cell->face(face)->set_boundary_id(0);
+                else 
+                  cell->face(face)->set_boundary_id(0);
+              }
+            else 
+              {
+                if (cell->face(face)->center()[1] < start + 1e-8)
+                  cell->face(face)->set_boundary_id(domain + 2 - 1);
+                else if (cell->face(face)->center()[1] > end - 1e-8)
+                  cell->face(face)->set_boundary_id(domain + 2 + 1);
+                else 
+                  cell->face(face)->set_boundary_id(0);
+              }
+          }
+      }
+
+    std::string name = "Grid-" + std::to_string(domain) + ".vtk";
+    std::ofstream output_file(name);
+    GridOut().write_vtk(triangulation, output_file);
+
+  }
+
 
   template<int dim>
   class DDM {
@@ -42,13 +145,6 @@ namespace KirasFM {
       // refinement methods:
       void prepare_refine(std::vector<std::vector<unsigned int>> connectivity);
       void refine();
-      void mark_circular(double radius);
-      void mark_circular_coarser(double radius);
-      void mark_shell_coarser(double inner_radius, double outer_radius);
-      void mark_adaptive();
-      void mark_problem(double radius, double TOL);
-
-      void fix_stupid_material_id();
 
       void print_result() const;
 
@@ -105,7 +201,7 @@ namespace KirasFM {
     cpus_per_domain(cpus_per_domain),
 
     slizes(slizes),
-    size( (selector == 0) ? slizes : ( (selector == 1) ? slizes * 2 : slizes * 8) ),
+    size(slizes),
 
     domain_map(std::vector<std::vector<unsigned int>>(size)),
 
@@ -167,60 +263,12 @@ namespace KirasFM {
 
   template<int dim>
   void DDM<dim>::initialize(std::vector<std::vector<unsigned int>> connectivity) {
-    //if( first_id(proc_id_list, world_rank) ) {
 
     // set up grid:
     const unsigned int refinements = prm.get_integer("Mesh & geometry parameters", "Number of refinements");
-//    const unsigned int scale       = prm.get_double("Mesh & geometry parameters", "Size of grid");
 
     for( unsigned int i = 0; i < owned_problems.size(); i++ ) {
-      KirasFM_Grid_Generator::KirasFMGridGenerator<dim> ddm_gg(owned_problems[i], size, refinements);
-      //  Silver ball in vacuum (3D only)
-
-      std::vector<double> layer_thickness = {2.0, 1.7, 0.95, 0.7};
-      if ( selector == 0 ) {
-        ddm_gg.create_nano_particle(
-          thm[i].return_triangulation(),
-          1.0, /*  radius of the silver ball */
-          layer_thickness
-        );
-      }
-      else if ( selector == 1 ) {
-        ddm_gg.create_half_nano_particle(
-          thm[i].return_triangulation(),
-          1.0, /*  radius of the silver ball */
-          layer_thickness
-        );
-      }
-      else if ( selector == 2 ) {
-        ddm_gg.create_eighth_nano_particle(
-          thm[i].return_triangulation(),
-          1.0, /*  radius of the silver ball */
-          layer_thickness
-        );
-      }
-      else {
-        Assert(false, ExcInternalError());
-      }
-
-      mark_circular_coarser(0.87);
-      mark_shell_coarser(1.05, 4.0);
-      //prepare_refine(connectivity);
-      refine();
-      mark_circular_coarser(0.92);
-      mark_shell_coarser(1.3, 4.0);
-      //prepare_refine(connectivity);
-      refine();
-
-      mark_problem(1.0, 0.05);
-      prepare_refine(connectivity);
-      refine();
-
-      fix_stupid_material_id();
-
-//      std::string name = "Grid-" + std::to_string(owned_problems[i]) + ".vtk";
-//      std::ofstream output_file1(name.c_str());
-//      GridOut().write_vtk(thm[i].return_triangulation(), output_file1);
+      make_grid(thm[i].return_triangulation(), owned_problems[i], size, refinements); 
     }
 
     // initalize the maxwell problems:
@@ -360,80 +408,6 @@ namespace KirasFM {
   }
 
   template<int dim>
-  void DDM<dim>::mark_circular(double radius) {
-
-    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-      for (auto &cell : thm[i].return_triangulation().active_cell_iterators()) 
-        if (cell->center().norm() > radius)
-          cell->set_refine_flag();
-  }
-
-  template<int dim>
-  void DDM<dim>::mark_adaptive() {
-    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-      thm[i].mark_for_refinement_error_estimator();
-
-    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-      thm[i].return_triangulation().prepare_coarsening_and_refinement();
-
-    double radius = 0.9;
-    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-      for (auto &cell : thm[i].return_triangulation().active_cell_iterators())
-        if (cell->center().norm() < radius)
-          cell->clear_refine_flag();
-  }
-
-  template<int dim>
-  void DDM<dim>::mark_circular_coarser(double radius) {
-    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-      for (auto &cell : thm[i].return_triangulation().active_cell_iterators()) {
-        if (cell->center().norm() < radius)
-          cell->set_coarsen_flag();
-      }
-  }
-
-  template<int dim>
-  void DDM<dim>::mark_shell_coarser(double inner_radius, double outer_radius) {
-    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-      for (auto &cell : thm[i].return_triangulation().active_cell_iterators()) {
-        if (cell->center().norm() > inner_radius && cell->center().norm() < outer_radius)
-          cell->set_coarsen_flag();
-      }
-  }
-
-
-  template<int dim>
-  void DDM<dim>::mark_problem( double radius, double TOL ) {
-
-    for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-      for (auto &cell : thm[i].return_triangulation().active_cell_iterators()) {
-        if ( cell->center()[2] > TOL || cell->center()[2] < -TOL )
-          continue;
-
-        if (cell->center().norm() > radius - TOL && cell->center().norm() < radius + TOL)
-          cell->set_refine_flag();
-      }
-  }
-
-    template<int dim>
-    void DDM<dim>::fix_stupid_material_id() {
-      for ( unsigned int i = 0; i < owned_problems.size(); i++ )
-        for (auto &cell : thm[i].return_triangulation().active_cell_iterators()) {
-          cell->set_material_id(0);
-
-          bool in_ball = true;
-          for ( unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; face++ )
-            if (cell->face(face)->center().norm() > 1) {
-              in_ball = false;
-              break;
-            }
-
-          if ( in_ball )
-            cell->set_material_id(1);
-        }
-    }
-
-  template<int dim>
   void DDM<dim>::refine() {
     for ( unsigned int i = 0; i < owned_problems.size(); i++ )
       thm[i].refine();
@@ -527,64 +501,15 @@ int main(int argc, char *argv[]) {
     );
 
     // create the connectivity map
-    const unsigned int size = (selector == 0) ? slizes : ( (selector == 1) ? slizes * 2 : slizes * 8);
+    const unsigned int size = slizes;
     std::vector<std::vector<unsigned int>> connectivity(size);
 
-    if ( selector == 0 ) {
-      for(unsigned int i = 0; i < size; i++) {
-        if (i != 0)
-          connectivity[i].push_back(i - 1);
+    for(unsigned int i = 0; i < size; i++) {
+      if (i != 0)
+        connectivity[i].push_back(i - 1);
 
-        if (i != size - 1)
-          connectivity[i].push_back(i + 1);
-      }
-    }
-    else if ( selector == 1 ) {
-      for(unsigned int i = 0; i < size; i++) {
-        unsigned int layer_id     = i / 2;
-        unsigned int subdomain_id = i % 2;
-
-        if (layer_id != 0)
-          connectivity[i].push_back(i - 2);
-
-        if ( subdomain_id == 0 )
-          connectivity[i].push_back(i + 1);
-
-        if ( subdomain_id == 1 )
-          connectivity[i].push_back(i - 1);
-
-        if (layer_id != slizes - 1)
-          connectivity[i].push_back(i + 2);
-      }
-    }
-    else if ( selector == 2 ) {
-      int neighbor_id[4][2] = {{1,3}, {-1,1}, {-1,1}, {-3,-1}};
-      for(unsigned int i = 0; i < size; i++) {
-
-        unsigned int layer_id = i / 8;
-        unsigned int subdomain_id = i % 8;
-
-        if (layer_id != 0)
-          connectivity[i].push_back(i - 8);
-
-        // inter-layer neighbors
-        if (subdomain_id < 4)
-          connectivity[i].push_back(i + 4);
-        if (subdomain_id >= 4)
-          connectivity[i].push_back(i - 4);
-
-        unsigned int halp = (subdomain_id < 4) ? subdomain_id : subdomain_id - 4;
-        connectivity[i].push_back(i + neighbor_id[halp][0]);
-        connectivity[i].push_back(i + neighbor_id[halp][1]);
-
-        if (layer_id != slizes - 1)
-          connectivity[i].push_back(i + 8);
-
-        std::sort(connectivity[i].begin(), connectivity[i].end());
-      }
-    }
-    else {
-      Assert(false, ExcInternalError());
+      if (i != size - 1)
+        connectivity[i].push_back(i + 1);
     }
 
 //    // --- For debugging ---
@@ -623,8 +548,8 @@ int main(int argc, char *argv[]) {
           << std::endl;
 
     switch ( dim ) {
-      case 3: {
-          DDM<3> problem(world, prm, pcout, timer, cpus_per_domain, slizes);
+      case 2: {
+          DDM<2> problem(world, prm, pcout, timer, cpus_per_domain, slizes);
           pcout << "==================================================================" << std::endl;
           pcout << "INITIALIZE:" << std::endl;
           problem.initialize(connectivity);
@@ -633,15 +558,7 @@ int main(int argc, char *argv[]) {
 //          for( unsigned int i = 0; i < 0; i++ ) {
             pcout << "==================================================================" << std::endl;
             pcout << "STEP " << i + 1 << ":" << std::endl;
-            if( false ) {
-              problem.mark_adaptive();
-              problem.prepare_refine(connectivity);
-              problem.prepare_refine(connectivity);
-              problem.refine();
-            } else {
-              problem.step(connectivity);
-            }
-    
+            problem.step(connectivity);
           }
           pcout << "==================================================================" << std::endl;
           problem.print_result();

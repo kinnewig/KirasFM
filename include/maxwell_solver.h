@@ -66,9 +66,9 @@
 #include <hanging_nodes.h>
 
 // === Nedelec ===
-//#include <deal.II/fe/fe_nedelec_sz.h>
+#include <deal.II/fe/fe_nedelec_sz.h>
 //#include <deal.II/fe/fe_nedelec.h>
-#include <fe_nedelec_sk.h>
+//#include <fe_nedelec_sk.h>
 
 namespace KirasFM {
   using namespace dealii;

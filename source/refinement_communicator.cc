@@ -101,5 +101,5 @@ namespace KirasFM{
       return *this;
     }
 
-    template class RefinementCommunicator<3>;
+    template class RefinementCommunicator<2>;
 }
