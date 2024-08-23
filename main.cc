@@ -25,24 +25,44 @@ namespace KirasFM {
     double start;
     double end;
 
+    unsigned int actual_refinements;
     std::vector<unsigned int> repetitions;
-    if (n_domains == 3)
+    if (n_domains == 2)
     {
       start = 1.0 * ((1.0 * domain));
       end   = 1.0 * ((1.0 * domain) + 1.0);
 
       repetitions = (dim == 2) ? std::vector<unsigned int>{1,1} : std::vector<unsigned int>{1, 1, 1};
+      actual_refinements = refinements;
     }
-    else if (n_domains == 6)
+    else if (n_domains == 4)
     {
       start = 0.5 * ((1.0 * domain));
       end   = 0.5 * ((1.0 * domain) + 1.0);
 
       repetitions = (dim == 2) ? std::vector<unsigned int>{2,1} : std::vector<unsigned int>{2, 1, 2};
+      actual_refinements = refinements - 1;
+    }
+    else if (n_domains == 8)
+    {
+      start = 0.25 * ((1.0 * domain));
+      end   = 0.25 * ((1.0 * domain) + 1.0);
+
+      repetitions = (dim == 2) ? std::vector<unsigned int>{4,1} : std::vector<unsigned int>{4, 1, 4};
+      actual_refinements = refinements - 2;
+    }
+    else if (n_domains == 16)
+    {
+      start = 0.125 * ((1.0 * domain));
+      end   = 0.125 * ((1.0 * domain) + 1.0);
+
+      repetitions = (dim == 2) ? std::vector<unsigned int>{4,1} : std::vector<unsigned int>{4, 1, 4};
+      actual_refinements = refinements - 3;
     }
     else {
       Assert(false, ExcInternalError());
     }
+
 
     const Point<dim> left_edge =
       (dim == 2) ? Point<dim>(0.0, start) : Point<dim>(0.0, start, 0.0);
@@ -56,7 +76,6 @@ namespace KirasFM {
     GridGenerator::subdivided_hyper_rectangle(triangulation, repetitions, left_edge, right_edge, true);
 
     // refine the grid
-    unsigned int actual_refinements = (n_domains == 3) ? refinements : refinements - 1;
     triangulation.refine_global(actual_refinements);
 
 
@@ -119,9 +138,9 @@ namespace KirasFM {
           }
       }
 
-    std::string name = "Grid-" + std::to_string(domain) + ".vtk";
-    std::ofstream output_file(name);
-    GridOut().write_vtk(triangulation, output_file);
+    //std::string name = "Grid-" + std::to_string(domain) + ".vtk";
+    //std::ofstream output_file(name);
+    //GridOut().write_vtk(triangulation, output_file);
 
   }
 
@@ -146,7 +165,7 @@ namespace KirasFM {
       void prepare_refine(std::vector<std::vector<unsigned int>> connectivity);
       void refine();
 
-      void print_result() const;
+      void print_result(const unsigned int step) const;
 
     private:
 
@@ -415,9 +434,9 @@ namespace KirasFM {
   }
 
   template<int dim>
-  void DDM<dim>::print_result() const {
+  void DDM<dim>::print_result(const unsigned int step) const {
     for( unsigned int i = 0; i < owned_problems.size(); i++ ) 
-      thm[i].print_results();
+      thm[i].print_results(step);
   }
 
   template<int dim>
@@ -548,21 +567,42 @@ int main(int argc, char *argv[]) {
           << std::endl;
 
     switch ( dim ) {
-      case 2: {
+      case 2: 
+        {
           DDM<2> problem(world, prm, pcout, timer, cpus_per_domain, slizes);
           pcout << "==================================================================" << std::endl;
           pcout << "INITIALIZE:" << std::endl;
           problem.initialize(connectivity);
+          problem.print_result(0);
 
           for( unsigned int i = 0; i < prm.get_integer("Mesh & geometry parameters", "Number of global iterations"); i++ ) {
 //          for( unsigned int i = 0; i < 0; i++ ) {
             pcout << "==================================================================" << std::endl;
             pcout << "STEP " << i + 1 << ":" << std::endl;
             problem.step(connectivity);
+            problem.print_result(i + 1);
           }
           pcout << "==================================================================" << std::endl;
-          problem.print_result();
         } break;
+
+      case 3: 
+        {
+          DDM<3> problem(world, prm, pcout, timer, cpus_per_domain, slizes);
+          pcout << "==================================================================" << std::endl;
+          pcout << "INITIALIZE:" << std::endl;
+          problem.initialize(connectivity);
+          problem.print_result(0);
+
+          for( unsigned int i = 0; i < prm.get_integer("Mesh & geometry parameters", "Number of global iterations"); i++ ) {
+//          for( unsigned int i = 0; i < 0; i++ ) {
+            pcout << "==================================================================" << std::endl;
+            pcout << "STEP " << i + 1 << ":" << std::endl;
+            problem.step(connectivity);
+            problem.print_result(i + 1);
+          }
+          pcout << "==================================================================" << std::endl;
+        } break;
+
 
       default:
         Assert(false, ExcNotImplemented());

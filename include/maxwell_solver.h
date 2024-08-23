@@ -109,7 +109,7 @@ class MaxwellProblem {
     // execute:
     void initialize();
     void solve(); 
-    void print_results() const;
+    void print_results(const unsigned int step) const;
 
     // assemble interface
     void update_interface_rhs();
@@ -156,7 +156,7 @@ class MaxwellProblem {
     void error_estimator( Vector<float> &error_indicators ) const;
 
     // output
-    void output_results() const;
+    void output_results(const unsigned int step) const;
 
 
     // MPI communicator

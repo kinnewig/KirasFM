@@ -6,13 +6,13 @@ subsection Mesh & geometry parameters
   set Dimension             = 2
 
   # Polynomial degree of the used Nedelec elements
-  set Polynomial degree     = 0
+  set Polynomial degree     = 1
 
   # Number of global mesh refinement steps applied to initial coarse grid
   set Number of refinements = 6
 
   # Number of global iterations of the outer jacobi fixpoint iterations
-  set Number of global iterations = 16
+  set Number of global iterations = 60
 
   # Scaling factor of the grid
   set Size of grid          = 1
@@ -24,7 +24,7 @@ subsection MPI parameters
   set CPUs per domain       = 1
 
   # Number of slizes (length) that will be created
-  set slizes                = 3
+  set slizes                = 8
 end
 
 
@@ -36,7 +36,7 @@ end
 # === physical constants ===
 subsection Physical constants
   # Frequency
-  set lambda = 0.6328
+  set lambda = 0.3164
 end
 
 

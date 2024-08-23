@@ -13,7 +13,9 @@ namespace KirasFM {
     const Point<2> &p,
     Vector<double> &values
   ) const {
-    values(0) = exp(- std::pow( p(0) - 0.5, 2 ) / 0.01 );
+    double size = 0.01;
+
+    values(0) = std::exp( - ( std::pow(p(0) - 0.5, 2) / size) );
     values(1) = 0.0;
     values(2) = 0.0; 
     values(3) = 0.0;
@@ -24,7 +26,9 @@ namespace KirasFM {
     const Point<3> &p,
     Vector<double> &values
   ) const {
-    values(0) = exp(- std::pow( p(0) - 0.5, 2 ) / 0.01 );
+    double size = 0.01;
+
+    values(0) = std::exp( - ( std::pow(p(0) - 0.5, 2) / size)  - (std::pow(p(2) - 0.5, 2) / size) );
     values(1) = 0.0;
     values(2) = 0.0; 
     values(3) = 0.0;

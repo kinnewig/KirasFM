@@ -102,4 +102,5 @@ namespace KirasFM{
     }
 
     template class RefinementCommunicator<2>;
+    template class RefinementCommunicator<3>;
 }

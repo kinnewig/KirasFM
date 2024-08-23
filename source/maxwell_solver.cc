@@ -1033,7 +1033,7 @@ void MaxwellProblem<dim>::solve() {
 
 
 template <int dim>
-void MaxwellProblem<dim>::output_results() const {
+void MaxwellProblem<dim>::output_results(const unsigned int step) const {
   pcout << "write the results...";
 
   //Define objects of our ComputeIntensity class
@@ -1045,7 +1045,7 @@ void MaxwellProblem<dim>::output_results() const {
 
   const std::string filename = prm.get_string("Output parameters", "Output file");
   const std::string format   = ".vtu";
-  const std::string outfile  =  filename + "-" + std::to_string(domain_id) + format;
+  const std::string outfile  =  filename + "-step-" + std::to_string(step) + "-domain-" + std::to_string(domain_id) + format;
   std::ofstream output(outfile);
 
   std::vector<std::string> solution_names;
@@ -1792,8 +1792,8 @@ void MaxwellProblem<dim>::initialize() {
 }
 
 template <int dim>
-void MaxwellProblem<dim>::print_results() const {
-  output_results();
+void MaxwellProblem<dim>::print_results(const unsigned int step) const {
+  output_results(step);
   timer.print_summary();
 }
 
@@ -1839,6 +1839,6 @@ void MaxwellProblem<dim>::update_refine( RefinementCommunicator<dim> r ) {
 
 // compile the tamplate with certain parameters
 template class MaxwellProblem<2>;
-//template class MaxwellProblem<3>;
+template class MaxwellProblem<3>;
 
 } // namespace: KirasFM
