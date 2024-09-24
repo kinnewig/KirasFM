@@ -8,6 +8,9 @@ This repository contains the Maxwell Solver KirasFM, a framework built on top of
 
 Please use the *Cite this repository* button in the *About* section of this repository.
 
+
+[![DOI](https://zenodo.org/badge/862353087.svg)](https://zenodo.org/doi/10.5281/zenodo.13834224)
+
 ## Installation - Dependencies
 
 The dependencies required are deal.II, Trilinos and boost.

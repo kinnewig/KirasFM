@@ -13,15 +13,24 @@ authors:
     email: kinnewig@ifam.uni-hannover.de
     orcid: 'https://orcid.org/0000-0002-0923-7413'
     affiliation: Leibniz University Hannover
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.13834224
+    description: KirasFM v1.0.0
 repository-code: 'https://github.com/kinnewig/KirasFM'
 abstract: >-
-  Kiras is an Iterative, Robust, and Adaptive Schwarz Solver for Maxwell (KIRAS), 
-  is a framework built on top of deal.II that provides all necessary tools for 
-  solving time-harmonic Maxwell's equations with an optimized Schwarz method.
+  Kiras is an Iterative, Robust, and Adaptive Schwarz Solver
+  for Maxwell (KIRAS),  is a framework built on top of
+  deal.II that provides all necessary tools for  solving
+  time-harmonic Maxwell's equations with an optimized
+  Schwarz method.
 keywords:
   - Finite Element Method
   - Optimized Schwarz Method
   - Domain Decomposition
-  - Maxwell's equations 
+  - Maxwell's equations
   - Time-harmonic Maxwell's equations
 license: LGPL-2.1
+commit: 1568eefd737d132853730939a794ab9b8745aee0
+version: 1.0.0
+date-released: '2024-09-24'
