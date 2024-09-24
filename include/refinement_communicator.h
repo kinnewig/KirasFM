@@ -1,6 +1,23 @@
-//
-// Created by sebastian on 25.02.23.
-//
+/* ---------------------------------------------------------------------
+ *
+ * Copyright (C) 2021 - 2024 Sebastian Kinnewig
+ *
+ * The code is licensed under the GNU Lesser General Public License as
+ * published by the Free Software Foundation in version 2.1
+ * The full text of the license can be found in the file LICENSE.md
+ *
+ * ---------------------------------------------------------------------
+ * Contact:
+ *   Sebastian Kinnewig
+ *   Leibniz Universität Hannover (LUH)
+ *   Institut für Angewandte Mathematik (IfAM)
+ *
+ * Questions?
+ *   E-Mail: kinnewig@ifam.uni-hannover.de
+ *
+ * Date: February 2023
+ *       Update: September 2024
+ */
 
 #ifndef KIRASFM_REFINEMENT_COMMUNICATOR_H
 #define KIRASFM_REFINEMENT_COMMUNICATOR_H

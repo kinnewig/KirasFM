@@ -1,3 +1,24 @@
+/* ---------------------------------------------------------------------
+ *
+ * Copyright (C) 2021 - 2024 Sebastian Kinnewig
+ *
+ * The code is licensed under the GNU Lesser General Public License as
+ * published by the Free Software Foundation in version 2.1
+ * The full text of the license can be found in the file LICENSE.md
+ *
+ * ---------------------------------------------------------------------
+ * Contact:
+ *   Sebastian Kinnewig
+ *   Leibniz Universität Hannover (LUH)
+ *   Institut für Angewandte Mathematik (IfAM)
+ *
+ * Questions?
+ *   E-Mail: kinnewig@ifam.uni-hannover.de
+ *
+ * Date: November 2021
+ *       Update: September 2024
+ */
+
 // === C++ Includes ===
 #include <boost/mpi.hpp>
 #include <boost/mpi/communicator.hpp>

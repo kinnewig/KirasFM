@@ -1,3 +1,24 @@
+/* ---------------------------------------------------------------------
+ *
+ * Copyright (C) 2021 - 2024 Sebastian Kinnewig
+ *
+ * The code is licensed under the GNU Lesser General Public License as
+ * published by the Free Software Foundation in version 2.1
+ * The full text of the license can be found in the file LICENSE.md
+ *
+ * ---------------------------------------------------------------------
+ * Contact:
+ *   Sebastian Kinnewig
+ *   Leibniz Universität Hannover (LUH)
+ *   Institut für Angewandte Mathematik (IfAM)
+ *
+ * Questions?
+ *   E-Mail: kinnewig@ifam.uni-hannover.de
+ *
+ * Date: September 2022
+ *       Update: September 2024
+ */
+
 #include "../include/kirasfm_grid_generator.h"
 
 namespace KirasFM_Grid_Generator
