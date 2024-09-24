@@ -12,8 +12,6 @@ namespace KirasFM_Grid_Generator {
 
   /*
    * Diamond Fin Waveguide
-   *
-   * Cooperation with Ayhan Demircan
    */
 
     // --- Diamond Fin ---

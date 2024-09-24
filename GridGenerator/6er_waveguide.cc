@@ -13,9 +13,7 @@ namespace KirasFM_Grid_Generator {
   /*
    * Laserwritten Waveguide
    *
-   * Cooperation with Dimitrii Patrovski
-   *
-   * Okay, this is a collection of help functions to create the
+   * This is a collection of help functions to create the
    * grid, to compare the Maxwell solver to laboratory experiments
    */
 

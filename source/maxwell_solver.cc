@@ -177,8 +177,7 @@ void MaxwellProblem<dim>::setup_system() {
   constraints.clear();
   constraints.reinit(locally_relevant_dofs);
 
-  bullshit_hanging_nodes_constraints_3d(dof_handler, constraints);
-//  DoFTools::make_hanging_node_constraints(dof_handler, constraints);
+  DoFTools::make_hanging_node_constraints(dof_handler, constraints);
 
   // FE_Nedelec boundary condition.
   VectorTools::project_boundary_values_curl_conforming_l2(
@@ -1131,8 +1130,7 @@ void MaxwellProblem<dim>::interpolate() {
     constraints.clear();
     constraints.reinit(locally_relevant_dofs);
 
-    bullshit_hanging_nodes_constraints_3d(dof_handler, constraints);
-//    DoFTools::make_hanging_node_constraints(dof_handler, constraints);
+    DoFTools::make_hanging_node_constraints(dof_handler, constraints);
 
     // FE_Nedelec boundary condition.
     VectorTools::project_boundary_values_curl_conforming_l2(
@@ -1154,12 +1152,12 @@ void MaxwellProblem<dim>::interpolate() {
 
     constraints.close();
 
-	// transfer the solution to the new grid
+	  // transfer the solution to the new grid
     solution.reinit(locally_owned_dofs, mpi_communicator);
-	soltrans.interpolate(old_solution, solution);
+	  soltrans.interpolate(old_solution, solution);
     constraints.distribute(solution);
 
-	system_rhs.reinit(locally_owned_dofs, mpi_communicator);
+	  system_rhs.reinit(locally_owned_dofs, mpi_communicator);
 
     rhs_backup.reinit(locally_owned_dofs, mpi_communicator);
 
@@ -1193,101 +1191,6 @@ void MaxwellProblem<dim>::interpolate() {
     TrilinosWrappers::MPI::Vector tmp = solution;
     assemble_system();
     solution = tmp;
-
-	// === Old approach ===
-
-//  Triangulation<dim> old_triangulation;
-//  old_triangulation.copy_triangulation(triangulation);
-//
-//  DoFHandler<dim> dof_handler_old(old_triangulation);
-//  setup_system(dof_handler_old);
-//  TrilinosWrappers::MPI::Vector old_solution = solution;
-//  //TrilinosWrappers::MPI::Vector rhs_old      = system_rhs_old;
-//  //TrilinosWrappers::MPI::Vector rhs_old_old  = system_rhs_old_old;
-//
-//  //execute_refinement();
-//  triangulation.execute_coarsening_and_refinement();
-//
-//	// and redistribute dofs.
-//	dof_handler.distribute_dofs (fe);
-//
-//	// === Aftermath ===
-//	// Recreate locally_owned_dofs and locally_relevant_dofs index sets
-//	locally_owned_dofs = dof_handler.locally_owned_dofs();
-//	DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
-//
-//    rhs_backup.reinit(locally_owned_dofs, mpi_communicator);
-//    system_rhs.reinit(locally_owned_dofs, mpi_communicator);
-//
-//  // Constraits
-//    constraints.clear();
-//    constraints.reinit(locally_relevant_dofs);
-//
-//    bullshit_hanging_nodes_constraints_3d(dof_handler, constraints);
-////    DoFTools::make_hanging_node_constraints(dof_handler, constraints);
-//
-//    // FE_Nedelec boundary condition.
-//    VectorTools::project_boundary_values_curl_conforming_l2(
-//      dof_handler,
-//      0 /* vector component*/ ,
-//      DirichletBoundaryValues<dim>(),
-//      1 /* boundary id*/,
-//      constraints
-//    );
-//
-//    // FE_Nedelec boundary condition.
-//    VectorTools::project_boundary_values_curl_conforming_l2(
-//      dof_handler,
-//      dim /* vector component*/ ,
-//      DirichletBoundaryValues<dim>(),
-//      1 /* boundary id*/,
-//      constraints
-//    );
-//
-//    constraints.close();
-//
-//    // create sparsity pattern:
-//    DynamicSparsityPattern dsp(locally_relevant_dofs);
-//    DoFTools::make_sparsity_pattern(
-//      dof_handler,
-//      dsp,
-//      constraints,
-//      false
-//    );
-//
-//    // create the system matrix
-//    SparsityTools::distribute_sparsity_pattern(
-//      dsp,
-//      dof_handler.locally_owned_dofs(),
-//      mpi_communicator,
-//      locally_relevant_dofs
-//    );
-//
-//    system_matrix.reinit(
-//      locally_owned_dofs,
-//      locally_owned_dofs,
-//      dsp,
-//      mpi_communicator
-//    );
-//
-//    solved = false;
-//
-//  // compute the new dof_handler (after refinement)
-//  //  setup_system();
-//
-//  VectorTools::interpolate_to_different_mesh(
-//    dof_handler_old,    // old dof handler
-//    old_solution,       // old solution
-//    dof_handler,        // refined dof handler
-//    solution            // interpolated solution
-//  );
-//
-//    constraints.distribute(solution);
-//
-//  // assamble the new system matrix
-//  TrilinosWrappers::MPI::Vector tmp = solution;
-//  assemble_system();
-//  solution = tmp;;
 
   pcout << "done!" << std::endl;
 }
@@ -1330,72 +1233,72 @@ void MaxwellProblem<dim>::interpolate_global() {
 	DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
 
   // Constraits
-    constraints.clear();
-    constraints.reinit(locally_relevant_dofs);
+  constraints.clear();
+  constraints.reinit(locally_relevant_dofs);
 
-    bullshit_hanging_nodes_constraints_3d(dof_handler, constraints);
+  DoFTools::make_hanging_node_constraints(dof_handler, constraints);
 
-    // FE_Nedelec boundary condition.
-    VectorTools::project_boundary_values_curl_conforming_l2(
-      dof_handler,
-      0 /* vector component*/ ,
-      DirichletBoundaryValues<dim>(),
-      1 /* boundary id*/,
-      constraints
-    );
+  // FE_Nedelec boundary condition.
+  VectorTools::project_boundary_values_curl_conforming_l2(
+    dof_handler,
+    0 /* vector component*/ ,
+    DirichletBoundaryValues<dim>(),
+    1 /* boundary id*/,
+    constraints
+  );
 
-    // FE_Nedelec boundary condition.
-    VectorTools::project_boundary_values_curl_conforming_l2(
-      dof_handler,
-      dim /* vector component*/ ,
-      DirichletBoundaryValues<dim>(),
-      1 /* boundary id*/,
-      constraints
-    );
+  // FE_Nedelec boundary condition.
+  VectorTools::project_boundary_values_curl_conforming_l2(
+    dof_handler,
+    dim /* vector component*/ ,
+    DirichletBoundaryValues<dim>(),
+    1 /* boundary id*/,
+    constraints
+  );
 
-    constraints.close();
+  constraints.close();
 
 	// transfer the solution to the new grid
-    solution.reinit(locally_owned_dofs, mpi_communicator);
+  solution.reinit(locally_owned_dofs, mpi_communicator);
 	soltrans.interpolate(old_solution, solution);
-    constraints.distribute(solution);
+  constraints.distribute(solution);
 
 	system_rhs.reinit(locally_owned_dofs, mpi_communicator);
 
-    rhs_backup.reinit(locally_owned_dofs, mpi_communicator);
+  rhs_backup.reinit(locally_owned_dofs, mpi_communicator);
 
-    // create sparsity pattern:
-    DynamicSparsityPattern dsp(locally_relevant_dofs);
-    DoFTools::make_sparsity_pattern(
-      dof_handler,
-      dsp,
-      constraints,
-      false
-    );
+  // create sparsity pattern:
+  DynamicSparsityPattern dsp(locally_relevant_dofs);
+  DoFTools::make_sparsity_pattern(
+    dof_handler,
+    dsp,
+    constraints,
+    false
+  );
 
-    // create the system matrix
-    SparsityTools::distribute_sparsity_pattern(
-      dsp,
-      dof_handler.locally_owned_dofs(),
-      mpi_communicator,
-      locally_relevant_dofs
-    );
+  // create the system matrix
+  SparsityTools::distribute_sparsity_pattern(
+    dsp,
+    dof_handler.locally_owned_dofs(),
+    mpi_communicator,
+    locally_relevant_dofs
+  );
 
-    system_matrix.reinit(
-      locally_owned_dofs,
-      locally_owned_dofs,
-      dsp,
-      mpi_communicator
-    );
+  system_matrix.reinit(
+    locally_owned_dofs,
+    locally_owned_dofs,
+    dsp,
+    mpi_communicator
+  );
 
-    rebuild = true;
-    solved  = false;
+  rebuild = true;
+  solved  = false;
 
-    TrilinosWrappers::MPI::Vector tmp = solution;
-    assemble_system();
-    solution = tmp;
+  TrilinosWrappers::MPI::Vector tmp = solution;
+  assemble_system();
+  solution = tmp;
 
-    pcout << "Done!" << std::endl;
+  pcout << "Done!" << std::endl;
 }
 
 // === errpr estimator === 

@@ -322,7 +322,6 @@ KirasFMGridGenerator<dim>::make_gallium_laser (
 }
 
 
-  //template class DDMGridGenerator<2>;
   template class KirasFMGridGenerator<3>;
 } // namespace: DDM_Grid_Generator
 

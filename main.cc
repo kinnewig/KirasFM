@@ -137,11 +137,6 @@ namespace KirasFM {
               }
           }
       }
-
-    //std::string name = "Grid-" + std::to_string(domain) + ".vtk";
-    //std::ofstream output_file(name);
-    //GridOut().write_vtk(triangulation, output_file);
-
   }
 
 
@@ -531,30 +526,6 @@ int main(int argc, char *argv[]) {
         connectivity[i].push_back(i + 1);
     }
 
-//    // --- For debugging ---
-//    pcout << "Connectivity map:" << std::endl;
-//    for(std::vector<unsigned int> bla : connectivity) {
-//      for(unsigned int i : bla)
-//        pcout << i << " ";
-//      pcout << std::endl;
-//    }
-
-//    // --- For debugging ---
-//    // print the grid:
-//    Triangulation<3> tria;
-
-//    KirasFM_Grid_Generator::KirasFMGridGenerator<3> ddm_gg(0, 3 * 8, 2);
-//    std::vector<double> layer_thickness = {2.00, 1.4, 0.6};
-//    ddm_gg.create_parted_nano_particle(
-//      tria,
-//      1.0, /*  radius of the silver ball */
-//      layer_thickness
-//    );
-
-//    std::ofstream output_file1("Grid1.vtk");
-//    GridOut().write_vtk(tria, output_file1);
-
-
     pcout << " __    __  __                               ________  __       __ \n" 
           << "/  |  /  |/  |                             /        |/  \\     /  |\n" 
           << "$$ | /$$/ $$/   ______   ______    _______ $$$$$$$$/ $$  \\   /$$ |\n" 
@@ -576,7 +547,6 @@ int main(int argc, char *argv[]) {
           problem.print_result(0);
 
           for( unsigned int i = 0; i < prm.get_integer("Mesh & geometry parameters", "Number of global iterations"); i++ ) {
-//          for( unsigned int i = 0; i < 0; i++ ) {
             pcout << "==================================================================" << std::endl;
             pcout << "STEP " << i + 1 << ":" << std::endl;
             problem.step(connectivity);
@@ -594,7 +564,6 @@ int main(int argc, char *argv[]) {
           problem.print_result(0);
 
           for( unsigned int i = 0; i < prm.get_integer("Mesh & geometry parameters", "Number of global iterations"); i++ ) {
-//          for( unsigned int i = 0; i < 0; i++ ) {
             pcout << "==================================================================" << std::endl;
             pcout << "STEP " << i + 1 << ":" << std::endl;
             problem.step(connectivity);

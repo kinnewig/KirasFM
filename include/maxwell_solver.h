@@ -39,7 +39,6 @@
 
 // Solution transfer
 #include <deal.II/numerics/solution_transfer.h>
-//#include <deal.II/distributed/solution_transfer.h>
 
 // Solver
 #include <deal.II/lac/trilinos_solver.h>
@@ -62,13 +61,9 @@
 #include <post_processing.h>
 #include <surface_communicator.h>
 #include <refinement_communicator.h>
-#include <write_data_table.h>
-#include <hanging_nodes.h>
 
 // === Nedelec ===
 #include <deal.II/fe/fe_nedelec_sz.h>
-//#include <deal.II/fe/fe_nedelec.h>
-//#include <fe_nedelec_sk.h>
 
 namespace KirasFM {
   using namespace dealii;

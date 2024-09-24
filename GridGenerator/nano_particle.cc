@@ -13,8 +13,6 @@ namespace KirasFM_Grid_Generator {
   /*
    * Nano Particles
    *
-   * Cooperation with Antonio Cana Lesina
-   *
    * This method provides two function to create nano particles.
    * The first method, creates a rectengular mesh and marks
    * a ball in the center
